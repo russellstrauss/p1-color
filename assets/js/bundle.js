@@ -75,6 +75,10 @@ module.exports = function () {
       var material = new THREE.MeshBasicMaterial(wireframeMaterial);
       var torus = new THREE.Mesh(geometry, material);
       scene.add(torus);
+      geometry = new THREE.SphereGeometry(radius - torusRadius, 64, 64);
+      geometry.translate(0, radius + torusRadius, 0);
+      var sphere = new THREE.Mesh(geometry, shadeMaterial);
+      scene.add(sphere);
     },
     enableControls: function enableControls() {
       controls = new THREE.OrbitControls(camera, renderer.domElement);
