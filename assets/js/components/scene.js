@@ -53,7 +53,7 @@ module.exports = function() {
 			self.addColorPickers();
 			
 			camera.position.x = -20;
-			camera.position.y = 20;
+			camera.position.y = 40;
 			camera.position.z = 30;
 			
 			if (self.settings.activateStatsFPS) {
@@ -136,14 +136,20 @@ module.exports = function() {
 			
 			let self = this;
 			
-			let radius = 5, torusRadius = 3, radialSegments = 16, tubularSegments = 25;
+			let cubeSize = 20;
+			let geometry = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
+			geometry.translate(0, cubeSize/2, 0);
+			let cube = new THREE.Mesh(geometry, wireframeMaterial);
+			scene.add(cube);
+			self.showPoints(geometry, distinctColors);
 			
-			let geometry = new THREE.TorusGeometry(radius, torusRadius, radialSegments, tubularSegments);
-			geometry.translate(0, radius + torusRadius, 0);
-			let material = new THREE.MeshBasicMaterial(wireframeMaterial);
-			let torus = new THREE.Mesh(geometry, material);
-			scene.add(torus);
-
+			for (let i = 0; i < geometry.vertices.length; i++) {
+				self.labelPoint(geometry.vertices[i], i.toString(), new THREE.Color('black'));
+			}
+			
+			
+			
+			let radius = 5, torusRadius = 3, radialSegments = 16, tubularSegments = 25;
 			geometry = new THREE.SphereGeometry(radius - torusRadius, 64, 64);
 			geometry.translate(0, radius + torusRadius, 0);
 			let sphere = new THREE.Mesh(geometry, shadeMaterial);
@@ -232,7 +238,12 @@ module.exports = function() {
 			let self = this;
 			
 			for (let i = 0; i < geometry.vertices.length; i++) {
-				self.showPoint(geometry.vertices[i], color, opacity);
+				if (Array.isArray(color)) {
+					self.showPoint(geometry.vertices[i], color[i], opacity);
+				}
+				else {
+					self.showPoint(geometry.vertices[i], color, opacity);
+				}
 			}
 		},
 		
