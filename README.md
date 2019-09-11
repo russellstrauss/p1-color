@@ -1,10 +1,11 @@
-# Tetrobot Phase 1
+# P1 - Color
 
 A tetrahedral robot virtual simulation.
 
 ## Authors
 
 * **Russell Strauss**
+* **Jiewen Wang**
 
 ## Getting Started
 
@@ -38,21 +39,16 @@ After running the gulp command, a new browser window will open with the project 
 
 ### Controls
 
-* L key: roll left
-* R key: roll right
-* O key: roll back
 * Left mouse click: rotate camera
 * Right mouse click: pan camera
 * Scroll: zoom
 
-## Deployment
+<!-- ## Deployment
 
-If you cannot run local web server, view project here: [http://jrstrauss.net/cg/tetrobot/](http://jrstrauss.net/cg/tetrobot/)
+If you cannot run local web server, view project here: [http://jrstrauss.net/cg/tetrobot/](http://jrstrauss.net/cg/tetrobot/) -->
 
 ## Built With
 
 * [Three.js](https://threejs.org/) - The WebGL JavaScript graphics framework
 
 ## Reference Materials
-
-* [Rotations About an Arbitrary Axis](https://www.youtube.com/watch?v=gRVxv8kWl0Q&t=1224s) - UC Davis Academics
