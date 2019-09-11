@@ -1,6 +1,6 @@
 # P1 - Color
 
-A tetrahedral robot virtual simulation.
+A beauty algorithm for mathematically selecting a matching color based on two color inputs.
 
 ## Authors
 
