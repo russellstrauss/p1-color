@@ -80,6 +80,11 @@ module.exports = function() {
 			let material = new THREE.MeshBasicMaterial(wireframeMaterial);
 			let torus = new THREE.Mesh(geometry, material);
 			scene.add(torus);
+
+			geometry = new THREE.SphereGeometry(radius - torusRadius, 64, 64);
+			geometry.translate(0, radius + torusRadius, 0);
+			let sphere = new THREE.Mesh(geometry, shadeMaterial);
+			scene.add(sphere);
 		},
 
 		enableControls: function() {
