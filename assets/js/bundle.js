@@ -22,6 +22,7 @@ module.exports = function () {
         activateAxesHelper: false,
         axisLength: 10
       },
+      activateColorPickers: true,
       activateStatsFPS: false,
       font: {
         enable: true,
@@ -47,9 +48,10 @@ module.exports = function () {
       self.resizeRendererOnWindowResize();
       self.setUpLights();
       self.addGeometries();
+      self.addColorPickers();
       camera.position.x = -20;
       camera.position.y = 20;
-      camera.position.z = 20;
+      camera.position.z = 30;
 
       if (self.settings.activateStatsFPS) {
         self.enableStats();
@@ -64,6 +66,49 @@ module.exports = function () {
 
       animate();
     },
+    setColor1: function setColor1(color) {
+      var color1Element = document.querySelector('#color1');
+      color1Element.style.backgroundColor = color;
+    },
+    setColor2: function setColor2(color) {
+      var color2Element = document.querySelector('#color2');
+      color2Element.style.backgroundColor = color;
+    },
+    setColor3: function setColor3(color) {
+      var color3Element = document.querySelector('#color3');
+      color3Element.style.backgroundColor = color;
+    },
+    setColors: function setColors(color1, color2, color3) {
+      this.setColor1(color1);
+      this.setColor2(color2);
+      this.setColor3(color3);
+    },
+    addColorPickers: function addColorPickers() {
+      var self = this;
+
+      if (self.settings.activateColorPickers) {
+        var params = {
+          ColorInput1: '#FFFFFF',
+          ColorInput2: '#FFFFFF'
+        };
+        var gui = new dat.GUI();
+        gui.domElement.parentElement.classList.add('color-1-picker');
+        gui.addColor(params, 'ColorInput1').onChange(function (event) {
+          if (params.ColorInput1) {
+            var colorObj = new THREE.Color(params.ColorInput1);
+            var hex = colorObj.getHexString();
+            self.setColor1(params.ColorInput1);
+          }
+        });
+        gui.addColor(params, 'ColorInput2').onChange(function (event) {
+          if (params.ColorInput2) {
+            var colorObj = new THREE.Color(params.ColorInput2);
+            var hex = colorObj.getHexString();
+            self.setColor2(params.ColorInput2);
+          }
+        });
+      }
+    },
     addGeometries: function addGeometries() {
       var self = this;
       var radius = 5,
@@ -75,6 +120,10 @@ module.exports = function () {
       var material = new THREE.MeshBasicMaterial(wireframeMaterial);
       var torus = new THREE.Mesh(geometry, material);
       scene.add(torus);
+      geometry = new THREE.SphereGeometry(radius - torusRadius, 64, 64);
+      geometry.translate(0, radius + torusRadius, 0);
+      var sphere = new THREE.Mesh(geometry, shadeMaterial);
+      scene.add(sphere);
     },
     enableControls: function enableControls() {
       controls = new THREE.OrbitControls(camera, renderer.domElement);
