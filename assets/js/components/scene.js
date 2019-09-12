@@ -4,13 +4,16 @@ module.exports = function() {
 	var stats = new Stats();
 	var wireframeMaterial = new THREE.MeshBasicMaterial({ wireframe: true, color: 0x08CDFA });
 	var shadeMaterial = new THREE.MeshPhongMaterial({
-		color: 0x08CDFA,
+		//color: 0x08CDFA,
 		side: THREE.DoubleSide,
-		opacity: .5,
-		transparent: true
+		//opacity: .5,
+		//transparent: true
 	});
 	var distinctColors = [new THREE.Color('#e6194b'), new THREE.Color('#3cb44b'), new THREE.Color('#ffe119'), new THREE.Color('#4363d8'), new THREE.Color('#f58231'), new THREE.Color('#911eb4'), new THREE.Color('#46f0f0'), new THREE.Color('#f032e6'), new THREE.Color('#bcf60c'), new THREE.Color('#fabebe'), new THREE.Color('#008080'), new THREE.Color('#e6beff'), new THREE.Color('#9a6324'), new THREE.Color('#fffac8'), new THREE.Color('#800000'), new THREE.Color('#aaffc3'), new THREE.Color('#808000'), new THREE.Color('#ffd8b1'), new THREE.Color('#000075'), new THREE.Color('#808080'), new THREE.Color('#ffffff'), new THREE.Color('#000000')];
 	
+	var sphere_1, sphere_2;
+	var rgb_cube_length = 50.0;
+
 	return {
 		
 		settings: {
@@ -59,6 +62,7 @@ module.exports = function() {
 			}
 			
 			var animate = function() {
+				self.processInput();
 
 				requestAnimationFrame(animate);
 				renderer.render(scene, camera);
@@ -67,6 +71,23 @@ module.exports = function() {
 			};
 			
 			animate();
+		},
+
+		processInput: function() {
+			var r, g, b;
+			r = document.getElementById( "color-1r" ).value / 255.0;
+			g = document.getElementById( "color-1g" ).value / 255.0;
+			b = document.getElementById( "color-1b" ).value / 255.0;
+
+			sphere_1.position.setX(r * rgb_cube_length);
+			sphere_1.position.setY(g * rgb_cube_length);
+			sphere_1.position.setZ(b * rgb_cube_length);
+
+			sphere_1.material.color.r = r;
+			sphere_1.material.color.g = g;
+			sphere_1.material.color.b = b;
+
+
 		},
 		
 		addGeometries: function() {
@@ -83,8 +104,8 @@ module.exports = function() {
 
 			geometry = new THREE.SphereGeometry(radius - torusRadius, 64, 64);
 			geometry.translate(0, radius + torusRadius, 0);
-			let sphere = new THREE.Mesh(geometry, shadeMaterial);
-			scene.add(sphere);
+			sphere_1 = new THREE.Mesh(geometry, shadeMaterial);
+			scene.add(sphere_1);
 		},
 
 		enableControls: function() {
