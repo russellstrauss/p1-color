@@ -86,12 +86,10 @@ module.exports = function() {
 			color1Element.style.backgroundColor = color;
 			color1.set(color);
 
+			sphere1.material.color = color1;
 			if (visualizeMode == RGB_MODE)
 			{
-				sphere1.material.color = color1;
-				sphere1.position.setX((color1.r-0.5)*RGBCubeSize);
-				sphere1.position.setY((color1.g-0.5)*RGBCubeSize);
-				sphere1.position.setZ((color1.b-0.5)*RGBCubeSize);
+				this.setPosByRGB(sphere1, color1);
 			}
 			this.updateOutputColor();
 		},
@@ -102,12 +100,10 @@ module.exports = function() {
 			color2Element.style.backgroundColor = color;
 			color2.set(color);
 
+			sphere2.material.color = color2;
 			if (visualizeMode == RGB_MODE)
 			{
-				sphere2.material.color = color2;
-				sphere2.position.setX((color2.r-0.5)*RGBCubeSize);
-				sphere2.position.setY((color2.g-0.5)*RGBCubeSize);
-				sphere2.position.setZ((color2.b-0.5)*RGBCubeSize);
+				this.setPosByRGB(sphere2, color2);
 			}
 			this.updateOutputColor();
 		},
@@ -117,12 +113,10 @@ module.exports = function() {
 			color3Element.style.backgroundColor = color;
 			color3.set(color);
 
+			sphere3.material.color = color3;
 			if (visualizeMode == RGB_MODE)
 			{
-				sphere3.material.color = color3;
-				sphere3.position.setX((color3.r-0.5)*RGBCubeSize);
-				sphere3.position.setY((color3.g-0.5)*RGBCubeSize);
-				sphere3.position.setZ((color3.b-0.5)*RGBCubeSize);
+				this.setPosByRGB(sphere3, color3);
 			}
 		},
 		
