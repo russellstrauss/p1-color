@@ -44,7 +44,7 @@ module.exports = function() {
 				}
 			},
 			messageDuration: 2000,
-			showBackground: false 
+			showBackground: true 
 		},
 		
 		init: function() {
@@ -93,9 +93,8 @@ module.exports = function() {
 			color1Element.style.backgroundColor = color;
 			color1.set(color);
 			color1Mesh.color = color1;
-			this.getComplementaryColor(color1);
 
-			sphere1.material.color = color1;
+			sphere1.material = color1Mesh;
 			if (visualizeMode == RGB_MODE)
 			{
 				this.setPosByRGB(sphere1, color1);
@@ -110,7 +109,7 @@ module.exports = function() {
 			color2.set(color);
 			color2Mesh.color = color2;
 
-			sphere2.material.color = color2;
+			sphere2.material = color2Mesh;
 			if (visualizeMode == RGB_MODE)
 			{
 				this.setPosByRGB(sphere2, color2);
@@ -123,8 +122,9 @@ module.exports = function() {
 			color3Element.style.backgroundColor = color;
 			color3.set(color);
 			color3Mesh.color = color3;
+			backgroundColorMesh.color = this.getComplementaryColor(color3);
 
-			sphere3.material.color = color3;
+			sphere3.material = color3Mesh;
 			if (visualizeMode == RGB_MODE)
 			{
 				this.setPosByRGB(sphere3, color3);
@@ -243,16 +243,26 @@ module.exports = function() {
 			planeGeometry.translate(RGBCubeSize/4, RGBCubeSize/4, -(RGBCubeSize/2) +  2 * zBufferOffset);
 			let colorInput2Mesh = new THREE.Mesh(planeGeometry, color2Mesh);
 			scene.add(colorInput2Mesh);
-			
-			//backgroundColorMesh.color = this.getComplementaryColor(color3);
 		},
 		
 		getComplementaryColor: function(color) {
 			
 			let result = color.clone();
-			// let hsl = new THREE.Color();
-			// result.getHSL(hsl);
-			// result = result.offsetHSL(Math.sin(Math.PI), hsl.s, hsl.l)
+			result = result.offsetHSL(.5, 0, 0);
+			return result;
+		},
+
+		hueShift: function(hue, angleInDegrees) {
+			
+			let result;
+
+			result = hue + angleConversion;
+			while (result > 1) {
+				result -= 1;
+			}
+			while (result < 0) {
+				result += 1;
+			}
 
 			return result;
 		},
