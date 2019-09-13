@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
-	<title>Tetrobot</title>
+	<title>P1 - Color</title>
 	
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 	<link href="https://fonts.googleapis.com/css?family=Roboto&display=swap" rel="stylesheet">
@@ -11,20 +11,12 @@
 </head>
 <body>
 	
-	<div class="container"></div>
-	<div id="message"></div>
-	<div id="input">
-		<span class="input-title">Color Picker</span>
-		<form> Red
-		<input type="range" id="color-1r" name="Red" min="0" max="255" value="0"><br>
-		</form>
-		<form> Green
-		<input type="range" id="color-1g" name="Green" min="0" max="255" value="0"><br>
-		</form>
-		<form> Blue
-		<input type="range" id="color-1b" name="Blue" min="0" max="255" value="0"><br>
-		</form>
+	<div class="color-display">
+		<div id="color1">1</div>
+		<div id="color3"></div>
+		<div id="color2">2</div>
 	</div>
+	<div id="message"></div>
 	<div id="legend">
 		<span class="legend-title">Controls</span>
 		<div class="backdrop">
@@ -75,6 +67,7 @@
 	<script src="assets/vendors/js/three.js/build/three.js"></script>
 	<script src="assets/vendors/js/three.js/examples/js/controls/OrbitControls.js"></script>
 	<script src="assets/vendors/js/three.js/examples/js/libs/stats.min.js"></script>
+	<script src="assets/vendors/js/three.js/examples/js/libs/dat.gui.min.js"></script>
 	<script src="assets/js/bundle.js"></script>
 </body>
 </html>

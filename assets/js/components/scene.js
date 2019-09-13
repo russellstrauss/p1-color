@@ -9,10 +9,17 @@ module.exports = function() {
 		//opacity: .5,
 		//transparent: true
 	});
-	var distinctColors = [new THREE.Color('#e6194b'), new THREE.Color('#3cb44b'), new THREE.Color('#ffe119'), new THREE.Color('#4363d8'), new THREE.Color('#f58231'), new THREE.Color('#911eb4'), new THREE.Color('#46f0f0'), new THREE.Color('#f032e6'), new THREE.Color('#bcf60c'), new THREE.Color('#fabebe'), new THREE.Color('#008080'), new THREE.Color('#e6beff'), new THREE.Color('#9a6324'), new THREE.Color('#fffac8'), new THREE.Color('#800000'), new THREE.Color('#aaffc3'), new THREE.Color('#808000'), new THREE.Color('#ffd8b1'), new THREE.Color('#000075'), new THREE.Color('#808080'), new THREE.Color('#ffffff'), new THREE.Color('#000000')];
+	var distinctColors = [new THREE.Color('#FFFF00'), new THREE.Color('#00FF00'), new THREE.Color('#FF0000'), new THREE.Color('#000000'), new THREE.Color('#00FFFF'), new THREE.Color('#FFFFFF'), new THREE.Color('#0000FF'), new THREE.Color('#FF00FF'), new THREE.Color('#bcf60c'), new THREE.Color('#fabebe'), new THREE.Color('#008080'), new THREE.Color('#e6beff'), new THREE.Color('#9a6324'), new THREE.Color('#fffac8'), new THREE.Color('#800000'), new THREE.Color('#aaffc3'), new THREE.Color('#808000'), new THREE.Color('#ffd8b1'), new THREE.Color('#000075'), new THREE.Color('#808080'), new THREE.Color('#ffffff'), new THREE.Color('#000000')];
 	
-	var sphere_1, sphere_2;
-	var rgb_cube_length = 50.0;
+	var RGB_MODE = 0;
+	var HSL_MODE = 1;
+	var visualizeMode = RGB_MODE;
+	var sphere1, sphere2, sphere3;
+	var cube1, cube2, cube3;
+	var color1 = new THREE.Color();
+	var color2 = new THREE.Color();
+	var color3 = new THREE.Color();
+	var RGBCubeSize = 20;
 
 	return {
 		
@@ -22,6 +29,7 @@ module.exports = function() {
 				activateAxesHelper: false,
 				axisLength: 10
 			},
+			activateColorPickers: true,
 			activateStatsFPS: false,
 			font: {
 				enable: true,
@@ -52,18 +60,17 @@ module.exports = function() {
 			self.resizeRendererOnWindowResize();
 			self.setUpLights();
 			self.addGeometries();
+			self.addColorPickers();
 			
 			camera.position.x = -20;
-			camera.position.y = 20;
-			camera.position.z = 20;
+			camera.position.y = 40;
+			camera.position.z = 30;
 			
 			if (self.settings.activateStatsFPS) {
 				self.enableStats();
 			}
 			
 			var animate = function() {
-				self.processInput();
-
 				requestAnimationFrame(animate);
 				renderer.render(scene, camera);
 				controls.update();
@@ -72,40 +79,193 @@ module.exports = function() {
 			
 			animate();
 		},
+		
+		setColor1: function(color) {
+			
+			let color1Element = document.querySelector('#color1');
+			color1Element.style.backgroundColor = color;
+			color1.set(color);
 
-		processInput: function() {
-			var r, g, b;
-			r = document.getElementById( "color-1r" ).value / 255.0;
-			g = document.getElementById( "color-1g" ).value / 255.0;
-			b = document.getElementById( "color-1b" ).value / 255.0;
+			if (visualizeMode == RGB_MODE)
+			{
+				sphere1.material.color = color1;
+				sphere1.position.setX((color1.r-0.5)*RGBCubeSize);
+				sphere1.position.setY((color1.g-0.5)*RGBCubeSize);
+				sphere1.position.setZ((color1.b-0.5)*RGBCubeSize);
+			}
+			this.updateOutputColor();
+		},
+		
+		setColor2: function(color) {
+			
+			let color2Element = document.querySelector('#color2');
+			color2Element.style.backgroundColor = color;
+			color2.set(color);
 
-			sphere_1.position.setX(r * rgb_cube_length);
-			sphere_1.position.setY(g * rgb_cube_length);
-			sphere_1.position.setZ(b * rgb_cube_length);
+			if (visualizeMode == RGB_MODE)
+			{
+				sphere2.material.color = color2;
+				sphere2.position.setX((color2.r-0.5)*RGBCubeSize);
+				sphere2.position.setY((color2.g-0.5)*RGBCubeSize);
+				sphere2.position.setZ((color2.b-0.5)*RGBCubeSize);
+			}
+			this.updateOutputColor();
+		},
+		
+		setColor3: function(color) {
+			let color3Element = document.querySelector('#color3');
+			color3Element.style.backgroundColor = color;
+			color3.set(color);
 
-			sphere_1.material.color.r = r;
-			sphere_1.material.color.g = g;
-			sphere_1.material.color.b = b;
+			if (visualizeMode == RGB_MODE)
+			{
+				sphere3.material.color = color3;
+				sphere3.position.setX((color3.r-0.5)*RGBCubeSize);
+				sphere3.position.setY((color3.g-0.5)*RGBCubeSize);
+				sphere3.position.setZ((color3.b-0.5)*RGBCubeSize);
+			}
+		},
+		
+		setColors: function(color1, color2, color3) {
+			
+			this.setColor1(color1);
+			this.setColor2(color2);
+			this.setColor3(color3);
+		},
 
+		setPosByRGB: function(mesh, color)
+		{
+			mesh.position.setX((color.r-0.5)*RGBCubeSize);
+			mesh.position.setY((color.g-0.5)*RGBCubeSize);
+			mesh.position.setZ((color.b-0.5)*RGBCubeSize);
+		},
 
+		setExposure: function(ex) {
+			let change = ex / 100.0; // just a small change
+			
+			// set cube colors
+			let scale = Math.pow(2.0, change);
+			console.log(color1.r * scale);
+			let c1 = cube1.material.color;
+			c1.r = Math.min(color1.r * scale, 1.0);
+			c1.g = Math.min(color1.g * scale, 1.0);
+			c1.b = Math.min(color1.b * scale, 1.0);
+			
+			let c2 = cube2.material.color;
+			c2.r = Math.min(color2.r * scale, 1.0);
+			c2.g = Math.min(color2.g * scale, 1.0);
+			c2.b = Math.min(color2.b * scale, 1.0);
+			
+			let c3 = cube3.material.color;
+			c3.r = Math.min(color3.r * scale, 1.0);
+			c3.g = Math.min(color3.g * scale, 1.0);
+			c3.b = Math.min(color3.b * scale, 1.0);
+			
+			this.setPosByRGB(cube1, c1);
+			this.setPosByRGB(cube2, c2);
+			this.setPosByRGB(cube3, c3);
+		},
+		
+		updateOutputColor: function() {
+			let xyz1 = this.RGB2XYZ(color1);
+			let xyz2 = this.RGB2XYZ(color2);
+			xyz1.add(xyz2)
+			xyz1.multiplyScalar(0.5);
+			let c = this.XYZ2RGB(xyz1);
+			this.setColor3("#"+c.getHexString());
+		},
+		
+		addColorPickers: function() {
+			
+			let self = this;
+			
+			if (self.settings.activateColorPickers) {
+				
+				let params = {
+					ColorInput1: '#FFFFFF',
+					ColorInput2: '#FFFFFF',
+					Exposure: 0.0
+				};
+				let gui = new dat.GUI();
+				
+				gui.domElement.parentElement.classList.add('color-1-picker');
+	
+				gui.addColor(params, 'ColorInput1').onChange(function(event) {
+					
+					if (params.ColorInput1) {
+						
+						let colorObj = new THREE.Color(params.ColorInput1);
+						let hex = colorObj.getHexString();
+						self.setColor1(params.ColorInput1);
+					}
+				});
+				
+				gui.addColor(params, 'ColorInput2').onChange(function(event) {
+					
+					if (params.ColorInput2) {
+						
+						let colorObj = new THREE.Color(params.ColorInput2);
+						let hex = colorObj.getHexString();
+						self.setColor2(params.ColorInput2);
+					}
+				});
+
+				gui.add(params, 'Exposure', -100, 100).onChange(function(event) {
+
+					if (params.Exposure) {
+						self.setExposure(params.Exposure);
+					}
+				});
+			}
 		},
 		
 		addGeometries: function() {
 			
 			let self = this;
 			
-			let radius = 5, torusRadius = 3, radialSegments = 16, tubularSegments = 25;
+			let geometry = new THREE.BoxGeometry(RGBCubeSize, RGBCubeSize, RGBCubeSize);
+			geometry.translate(0, RGBCubeSize/2, 0);
+			let cube = new THREE.Mesh(geometry, wireframeMaterial);
+			scene.add(cube);
+			self.showPoints(geometry, distinctColors);
 			
-			let geometry = new THREE.TorusGeometry(radius, torusRadius, radialSegments, tubularSegments);
-			geometry.translate(0, radius + torusRadius, 0);
-			let material = new THREE.MeshBasicMaterial(wireframeMaterial);
-			let torus = new THREE.Mesh(geometry, material);
-			scene.add(torus);
+			for (let i = 0; i < geometry.vertices.length; i++) {
+				self.labelPoint(geometry.vertices[i], i.toString(), new THREE.Color('black'));
+			}
+			
+			
+			let radius = 2;
+			geometry = new THREE.SphereGeometry(radius, 64, 64);
+			geometry.translate(0, RGBCubeSize/2, 0);
+			let m1 = shadeMaterial.clone();
+			sphere1 = new THREE.Mesh(geometry, m1);
+			scene.add(sphere1);
 
-			geometry = new THREE.SphereGeometry(radius - torusRadius, 64, 64);
-			geometry.translate(0, radius + torusRadius, 0);
-			sphere_1 = new THREE.Mesh(geometry, shadeMaterial);
-			scene.add(sphere_1);
+			let m2 = shadeMaterial.clone()
+			sphere2 = new THREE.Mesh(geometry, m2);
+			scene.add(sphere2);
+
+			let m3 = shadeMaterial.clone()
+			sphere3 = new THREE.Mesh(geometry, m3);
+			scene.add(sphere3);
+
+			geometry = new THREE.BoxGeometry(radius, radius, radius);
+			geometry.translate(0, RGBCubeSize/2, 0);
+			let m4 = shadeMaterial.clone();
+			cube1 = new THREE.Mesh(geometry, m4);
+			scene.add(cube1);
+			
+			geometry = new THREE.BoxGeometry(radius, radius, radius);
+			geometry.translate(0, RGBCubeSize/2, 0);
+			let m5 = shadeMaterial.clone();
+			cube2 = new THREE.Mesh(geometry, m5);
+			scene.add(cube2);
+			
+			geometry = new THREE.BoxGeometry(radius, radius, radius);
+			geometry.translate(0, RGBCubeSize/2, 0);
+			let m6 = shadeMaterial.clone();
+			cube3 = new THREE.Mesh(geometry, m6);
+			scene.add(cube3);
 		},
 
 		enableControls: function() {
@@ -190,7 +350,12 @@ module.exports = function() {
 			let self = this;
 			
 			for (let i = 0; i < geometry.vertices.length; i++) {
-				self.showPoint(geometry.vertices[i], color, opacity);
+				if (Array.isArray(color)) {
+					self.showPoint(geometry.vertices[i], color[i], opacity);
+				}
+				else {
+					self.showPoint(geometry.vertices[i], color, opacity);
+				}
 			}
 		},
 		
@@ -355,6 +520,25 @@ module.exports = function() {
 					renderer.setSize(window.innerWidth, window.innerHeight);
 				}
 			}, 250));
+		},
+
+		RGB2XYZ: function(color)
+		{
+			let r = color.r;
+			let g = color.g;
+			let b = color.b;
+			let x = (   0.49*r +    0.31*g + 0.2*b) / 0.17697;
+			let y = (0.17697*r + 0.81240*g + 0.01063*b) / 0.17697;
+			let z = (               0.01*g + 0.99*b) / 0.17697;
+			return new THREE.Vector3(x, y, z);
+		},
+
+		XYZ2RGB: function(c) // c is Vector3
+		{
+			let r = (0.41847*c.x-0.15866*c.y-0.082835*c.z);
+			let g = (-0.091169*c.x+0.25243*c.y+0.015708*c.z);
+			let b = (0.00092090*c.x-0.0025498*c.y+0.1786*c.z);
+			return new THREE.Color(r, g, b);
 		}
 	}
 }
