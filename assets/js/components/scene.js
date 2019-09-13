@@ -4,11 +4,9 @@ module.exports = function() {
 	var stats = new Stats();
 	var wireframeMaterial = new THREE.MeshBasicMaterial({ wireframe: true, color: 0x08CDFA });
 	var shadeMaterial = new THREE.MeshPhongMaterial({
-		//color: 0x08CDFA,
-		side: THREE.DoubleSide,
-		//opacity: .5,
-		//transparent: true
+		side: THREE.DoubleSide
 	});
+	
 	var distinctColors = [new THREE.Color('#FFFF00'), new THREE.Color('#00FF00'), new THREE.Color('#FF0000'), new THREE.Color('#000000'), new THREE.Color('#00FFFF'), new THREE.Color('#FFFFFF'), new THREE.Color('#0000FF'), new THREE.Color('#FF00FF'), new THREE.Color('#bcf60c'), new THREE.Color('#fabebe'), new THREE.Color('#008080'), new THREE.Color('#e6beff'), new THREE.Color('#9a6324'), new THREE.Color('#fffac8'), new THREE.Color('#800000'), new THREE.Color('#aaffc3'), new THREE.Color('#808000'), new THREE.Color('#ffd8b1'), new THREE.Color('#000075'), new THREE.Color('#808080'), new THREE.Color('#ffffff'), new THREE.Color('#000000')];
 	
 	var RGB_MODE = 0;
@@ -19,6 +17,11 @@ module.exports = function() {
 	var color1 = new THREE.Color();
 	var color2 = new THREE.Color();
 	var color3 = new THREE.Color();
+	var color1Mesh = new THREE.MeshPhongMaterial({side: THREE.DoubleSide, color: color1});
+	var color2Mesh = new THREE.MeshPhongMaterial({side: THREE.DoubleSide, color: color2});
+	var color3Mesh = new THREE.MeshPhongMaterial({side: THREE.DoubleSide, color: color3});
+	var backgroundColor = new THREE.Color();
+	var backgroundColorMesh = new THREE.MeshPhongMaterial({side: THREE.DoubleSide, color: backgroundColor});
 	var RGBCubeSize = 20;
 	var HSLConeRadius = 15;
 	var HSLConeHeight = 15;
@@ -43,7 +46,8 @@ module.exports = function() {
 					curveSegments: 1
 				}
 			},
-			messageDuration: 2000
+			messageDuration: 2000,
+			showBackground: false 
 		},
 		
 		init: function() {
@@ -64,6 +68,9 @@ module.exports = function() {
 			self.setUpLights();
 			self.addGeometries();
 			self.addColorPickers();
+			if (self.settings.showBackground) {
+				self.addBackgroundColorDemonstration();
+			}
 			
 			camera.position.x = -20;
 			camera.position.y = 40;
@@ -88,6 +95,8 @@ module.exports = function() {
 			let color1Element = document.querySelector('#color1');
 			color1Element.style.backgroundColor = color;
 			color1.set(color);
+			color1Mesh.color = color1;
+			this.getComplementaryColor(color1);
 
 			sphere1.material.color = color1;
 			if (visualizeMode == RGB_MODE)
@@ -102,6 +111,7 @@ module.exports = function() {
 			let color2Element = document.querySelector('#color2');
 			color2Element.style.backgroundColor = color;
 			color2.set(color);
+			color2Mesh.color = color2;
 
 			sphere2.material.color = color2;
 			if (visualizeMode == RGB_MODE)
@@ -115,6 +125,7 @@ module.exports = function() {
 			let color3Element = document.querySelector('#color3');
 			color3Element.style.backgroundColor = color;
 			color3.set(color);
+			color3Mesh.color = color3;
 
 			sphere3.material.color = color3;
 			if (visualizeMode == RGB_MODE)
@@ -197,8 +208,8 @@ module.exports = function() {
 					ColorSpace: 'RGB',
 					Exposure: 0.0
 				};
-				let gui = new dat.GUI();
 				
+				let gui = new dat.GUI();
 				gui.domElement.parentElement.classList.add('color-1-picker');
 	
 				gui.addColor(params, 'ColorInput1').onChange(function(event) {
@@ -234,6 +245,39 @@ module.exports = function() {
 					}
 				});
 			}
+		},
+		
+		addBackgroundColorDemonstration: function() {
+			
+			let zBufferOffset = .05;
+			let planeGeometry = new THREE.PlaneGeometry(RGBCubeSize, RGBCubeSize, 1);
+			planeGeometry.translate(0, RGBCubeSize/2, -(RGBCubeSize/2) + zBufferOffset);
+			
+			let backdropMesh = new THREE.Mesh(planeGeometry, backgroundColorMesh);
+			scene.add(backdropMesh);
+			
+			let inputSwatchSize = RGBCubeSize/3;
+			planeGeometry = new THREE.PlaneGeometry(inputSwatchSize, inputSwatchSize, 1);
+			planeGeometry.translate(-2*inputSwatchSize/3, RGBCubeSize + (-3*inputSwatchSize/3), -(RGBCubeSize/2) +  2 * zBufferOffset);
+			let colorInput1Mesh = new THREE.Mesh(planeGeometry, color1Mesh);
+			scene.add(colorInput1Mesh);
+			
+			planeGeometry = new THREE.PlaneGeometry(inputSwatchSize, inputSwatchSize, 1);
+			planeGeometry.translate(RGBCubeSize/4, RGBCubeSize/4, -(RGBCubeSize/2) +  2 * zBufferOffset);
+			let colorInput2Mesh = new THREE.Mesh(planeGeometry, color2Mesh);
+			scene.add(colorInput2Mesh);
+			
+			//backgroundColorMesh.color = this.getComplementaryColor(color3);
+		},
+		
+		getComplementaryColor: function(color) {
+			
+			let result = color.clone();
+			// let hsl = new THREE.Color();
+			// result.getHSL(hsl);
+			// result = result.offsetHSL(Math.sin(Math.PI), hsl.s, hsl.l)
+
+			return result;
 		},
 		
 		addGeometries: function() {
@@ -437,7 +481,7 @@ module.exports = function() {
 			parent.add(line);
 		},
 		
-		getDistance: function(pt1, pt2) { // create point class?
+		getDistance: function(pt1, pt2) {
 			
 			let squirt = Math.pow((pt2.x - pt1.x), 2) + Math.pow((pt2.y - pt1.y), 2) + Math.pow((pt2.z - pt1.z), 2);
 			return Math.sqrt(squirt);
@@ -551,6 +595,25 @@ module.exports = function() {
 					// do stuff when pressing key
 				}
 			});
+		},
+		
+		getCentroid: function(geometry) {
+			
+			let result = {};
+			let x = 0, y = 0, z = 0;
+			
+			for (let i = 0; i < geometry.vertices.length; i++) {
+				
+				x += geometry.vertices[i].x;
+				y += geometry.vertices[i].y;
+				z += geometry.vertices[i].z;
+			}
+			
+			x = x / geometry.vertices.length;
+			y = y / geometry.vertices.length;
+			z = z / geometry.vertices.length;
+			result = { x: x, y: y, z: z};
+			return result;
 		},
 		
 		resizeRendererOnWindowResize: function() {
