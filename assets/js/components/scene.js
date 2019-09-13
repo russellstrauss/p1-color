@@ -7,7 +7,14 @@ module.exports = function() {
 		side: THREE.DoubleSide
 	});
 	
-	var distinctColors = [new THREE.Color('#FFFF00'), new THREE.Color('#00FF00'), new THREE.Color('#FF0000'), new THREE.Color('#000000'), new THREE.Color('#00FFFF'), new THREE.Color('#FFFFFF'), new THREE.Color('#0000FF'), new THREE.Color('#FF00FF'), new THREE.Color('#bcf60c'), new THREE.Color('#fabebe'), new THREE.Color('#008080'), new THREE.Color('#e6beff'), new THREE.Color('#9a6324'), new THREE.Color('#fffac8'), new THREE.Color('#800000'), new THREE.Color('#aaffc3'), new THREE.Color('#808000'), new THREE.Color('#ffd8b1'), new THREE.Color('#000075'), new THREE.Color('#808080'), new THREE.Color('#ffffff'), new THREE.Color('#000000')];
+	var distinctColors = [new THREE.Color('#FFFFFF'), 
+						new THREE.Color('#FFFF00'), 
+						new THREE.Color('#FF00FF'), 
+						new THREE.Color('#FF0000'), 
+						new THREE.Color('#00FF00'), 
+						new THREE.Color('#00FFFF'), 
+						new THREE.Color('#000000'), 
+						new THREE.Color('#0000FF'), new THREE.Color('#bcf60c'), new THREE.Color('#fabebe'), new THREE.Color('#008080'), new THREE.Color('#e6beff'), new THREE.Color('#9a6324'), new THREE.Color('#fffac8'), new THREE.Color('#800000'), new THREE.Color('#aaffc3'), new THREE.Color('#808000'), new THREE.Color('#ffd8b1'), new THREE.Color('#000075'), new THREE.Color('#808080'), new THREE.Color('#ffffff'), new THREE.Color('#000000')];
 	
 	var RGB_MODE = 0;
 	var HSL_MODE = 1;
@@ -103,6 +110,10 @@ module.exports = function() {
 			{
 				this.setPosByRGB(sphere1, color1);
 			}
+			else
+			{
+				this.setPosByHSL(sphere1, color1);
+			}
 			this.updateOutputColor();
 		},
 		
@@ -118,6 +129,10 @@ module.exports = function() {
 			{
 				this.setPosByRGB(sphere2, color2);
 			}
+			else
+			{
+				this.setPosByHSL(sphere2, color2);
+			}
 			this.updateOutputColor();
 		},
 		
@@ -131,6 +146,10 @@ module.exports = function() {
 			if (visualizeMode == RGB_MODE)
 			{
 				this.setPosByRGB(sphere3, color3);
+			}
+			else
+			{
+				this.setPosByHSL(sphere3, color3);
 			}
 		},
 		
@@ -148,12 +167,24 @@ module.exports = function() {
 			mesh.position.setZ((color.b-0.5)*RGBCubeSize);
 		},
 
+		setPosByHSL: function(mesh, color)
+		{
+			let hsl = color.getHSL();
+			let r = HSLConeRadius * (1 - 2*Math.abs(hsl.l - 0.5));
+			let x = r * Math.sin(-hsl.h * Math.PI * 2);
+			let z = r * Math.cos(hsl.h * Math.PI * 2);
+			let y = hsl.l * HSLConeHeight * 2 - 0.5 * HSLConeHeight;
+
+			mesh.position.setX(x);
+			mesh.position.setY(y);
+			mesh.position.setZ(z);
+		},
+
 		setExposure: function(ex) {
 			let change = ex / 100.0; // just a small change
 			
 			// set cube colors
 			let scale = Math.pow(2.0, change);
-			console.log(color1.r * scale);
 			let c1 = cube1.material.color;
 			c1.r = Math.min(color1.r * scale, 1.0);
 			c1.g = Math.min(color1.g * scale, 1.0);
@@ -169,9 +200,18 @@ module.exports = function() {
 			c3.g = Math.min(color3.g * scale, 1.0);
 			c3.b = Math.min(color3.b * scale, 1.0);
 			
-			this.setPosByRGB(cube1, c1);
-			this.setPosByRGB(cube2, c2);
-			this.setPosByRGB(cube3, c3);
+			if (visualizeMode == RGB_MODE)
+			{
+				this.setPosByRGB(cube1, c1);
+				this.setPosByRGB(cube2, c2);
+				this.setPosByRGB(cube3, c3);
+			}
+			else
+			{
+				this.setPosByHSL(cube1, c1);
+				this.setPosByHSL(cube2, c2);
+				this.setPosByHSL(cube3, c3);
+			}
 		},
 
 		setColorSpace: function(mode) {
@@ -186,6 +226,19 @@ module.exports = function() {
 					child.visible = (mode == RGB_MODE);
 				}
 			});
+
+			if (mode == HSL_MODE)
+			{
+				this.setPosByHSL(sphere1, color1);
+				this.setPosByHSL(sphere2, color2);
+				this.setPosByHSL(sphere3, color3);
+			}
+			else
+			{
+				this.setPosByRGB(sphere1, color1);
+				this.setPosByRGB(sphere2, color2);
+				this.setPosByRGB(sphere3, color3);
+			}
 		},
 		
 		updateOutputColor: function() {
@@ -304,11 +357,11 @@ module.exports = function() {
 			HSLCone.add(cone);
 			let HSLColors = [new THREE.Color("hsl(0, 100%, 100%)"),
 							new THREE.Color("hsl(0, 100%, 50%)"),
-							new THREE.Color("hsl(60, 100%, 50%)"),
-							new THREE.Color("hsl(120, 100%, 50%)"),
-							new THREE.Color("hsl(180, 100%, 50%)"),
-							new THREE.Color("hsl(240, 100%, 50%)"),
 							new THREE.Color("hsl(300, 100%, 50%)"),
+							new THREE.Color("hsl(240, 100%, 50%)"),
+							new THREE.Color("hsl(180, 100%, 50%)"),
+							new THREE.Color("hsl(120, 100%, 50%)"),
+							new THREE.Color("hsl(60, 100%, 50%)"),
 							new THREE.Color("hsl(0, 0%, 50%)")];
 			self.showPoints(geometry, HSLColors, 1.0, HSLCone);
 
@@ -318,9 +371,6 @@ module.exports = function() {
 			cone = new THREE.Mesh(geometry, wireframeMaterial);
 			HSLCone.add(cone);
 			self.showPoint(geometry.vertices[0], new THREE.Color("hsl(0, 0%, 0%)"), 1.0, HSLCone);
-
-			// hide one of color space reference frames
-			this.setColorSpace(visualizeMode);
 			
 			let radius = 2;
 			geometry = new THREE.SphereGeometry(radius, 64, 64);
@@ -354,6 +404,10 @@ module.exports = function() {
 			let m6 = shadeMaterial.clone();
 			cube3 = new THREE.Mesh(geometry, m6);
 			scene.add(cube3);
+
+			
+			// hide one of color space reference frames
+			this.setColorSpace(visualizeMode);
 		},
 
 		enableControls: function() {
