@@ -7,11 +7,18 @@ module.exports = function() {
 		side: THREE.DoubleSide
 	});
 	
-	var distinctColors = [new THREE.Color('#FFFF00'), new THREE.Color('#00FF00'), new THREE.Color('#FF0000'), new THREE.Color('#000000'), new THREE.Color('#00FFFF'), new THREE.Color('#FFFFFF'), new THREE.Color('#0000FF'), new THREE.Color('#FF00FF'), new THREE.Color('#bcf60c'), new THREE.Color('#fabebe'), new THREE.Color('#008080'), new THREE.Color('#e6beff'), new THREE.Color('#9a6324'), new THREE.Color('#fffac8'), new THREE.Color('#800000'), new THREE.Color('#aaffc3'), new THREE.Color('#808000'), new THREE.Color('#ffd8b1'), new THREE.Color('#000075'), new THREE.Color('#808080'), new THREE.Color('#ffffff'), new THREE.Color('#000000')];
+	var distinctColors = [new THREE.Color('#FFFFFF'), 
+						new THREE.Color('#FFFF00'), 
+						new THREE.Color('#FF00FF'), 
+						new THREE.Color('#FF0000'), 
+						new THREE.Color('#00FF00'), 
+						new THREE.Color('#00FFFF'), 
+						new THREE.Color('#000000'), 
+						new THREE.Color('#0000FF'), new THREE.Color('#bcf60c'), new THREE.Color('#fabebe'), new THREE.Color('#008080'), new THREE.Color('#e6beff'), new THREE.Color('#9a6324'), new THREE.Color('#fffac8'), new THREE.Color('#800000'), new THREE.Color('#aaffc3'), new THREE.Color('#808000'), new THREE.Color('#ffd8b1'), new THREE.Color('#000075'), new THREE.Color('#808080'), new THREE.Color('#ffffff'), new THREE.Color('#000000')];
 	
 	var RGB_MODE = 0;
 	var HSL_MODE = 1;
-	var visualizeMode = HSL_MODE;
+	var visualizeMode = RGB_MODE;
 	var sphere1, sphere2, sphere3;
 	var cube1, cube2, cube3;
 	var color1 = new THREE.Color();
@@ -23,6 +30,9 @@ module.exports = function() {
 	var backgroundColor = new THREE.Color();
 	var backgroundColorMesh = new THREE.MeshPhongMaterial({side: THREE.DoubleSide, color: backgroundColor});
 	var RGBCubeSize = 20;
+	var HSLConeRadius = 15;
+	var HSLConeHeight = 15;
+	var RGBCube, HSLCone;
 
 	return {
 		
@@ -99,6 +109,10 @@ module.exports = function() {
 			{
 				this.setPosByRGB(sphere1, color1);
 			}
+			else
+			{
+				this.setPosByHSL(sphere1, color1);
+			}
 			this.updateOutputColor();
 		},
 		
@@ -114,6 +128,10 @@ module.exports = function() {
 			{
 				this.setPosByRGB(sphere2, color2);
 			}
+			else
+			{
+				this.setPosByHSL(sphere2, color2);
+			}
 			this.updateOutputColor();
 		},
 		
@@ -128,6 +146,10 @@ module.exports = function() {
 			if (visualizeMode == RGB_MODE)
 			{
 				this.setPosByRGB(sphere3, color3);
+			}
+			else
+			{
+				this.setPosByHSL(sphere3, color3);
 			}
 		},
 		
@@ -145,12 +167,24 @@ module.exports = function() {
 			mesh.position.setZ((color.b-0.5)*RGBCubeSize);
 		},
 
+		setPosByHSL: function(mesh, color)
+		{
+			let hsl = color.getHSL();
+			let r = HSLConeRadius * (1 - 2*Math.abs(hsl.l - 0.5));
+			let x = r * Math.sin(-hsl.h * Math.PI * 2);
+			let z = r * Math.cos(hsl.h * Math.PI * 2);
+			let y = hsl.l * HSLConeHeight * 2 - 0.5 * HSLConeHeight;
+
+			mesh.position.setX(x);
+			mesh.position.setY(y);
+			mesh.position.setZ(z);
+		},
+
 		setExposure: function(ex) {
 			let change = ex / 100.0; // just a small change
 			
 			// set cube colors
 			let scale = Math.pow(2.0, change);
-			console.log(color1.r * scale);
 			let c1 = cube1.material.color;
 			c1.r = Math.min(color1.r * scale, 1.0);
 			c1.g = Math.min(color1.g * scale, 1.0);
@@ -166,17 +200,52 @@ module.exports = function() {
 			c3.g = Math.min(color3.g * scale, 1.0);
 			c3.b = Math.min(color3.b * scale, 1.0);
 			
-			this.setPosByRGB(cube1, c1);
-			this.setPosByRGB(cube2, c2);
-			this.setPosByRGB(cube3, c3);
+			if (visualizeMode == RGB_MODE)
+			{
+				this.setPosByRGB(cube1, c1);
+				this.setPosByRGB(cube2, c2);
+				this.setPosByRGB(cube3, c3);
+			}
+			else
+			{
+				this.setPosByHSL(cube1, c1);
+				this.setPosByHSL(cube2, c2);
+				this.setPosByHSL(cube3, c3);
+			}
+		},
+
+		setColorSpace: function(mode) {
+			visualizeMode = mode
+			HSLCone.traverse ( function (child) {
+				if (child instanceof THREE.Mesh || child instanceof THREE.Points) {
+					child.visible = (mode == HSL_MODE);
+				}
+			});
+			RGBCube.traverse ( function (child) {
+				if (child instanceof THREE.Mesh || child instanceof THREE.Points) {
+					child.visible = (mode == RGB_MODE);
+				}
+			});
+
+			if (mode == HSL_MODE)
+			{
+				this.setPosByHSL(sphere1, color1);
+				this.setPosByHSL(sphere2, color2);
+				this.setPosByHSL(sphere3, color3);
+			}
+			else
+			{
+				this.setPosByRGB(sphere1, color1);
+				this.setPosByRGB(sphere2, color2);
+				this.setPosByRGB(sphere3, color3);
+			}
 		},
 		
 		updateOutputColor: function() {
-			let xyz1 = this.RGB2XYZ(color1);
-			let xyz2 = this.RGB2XYZ(color2);
-			xyz1.add(xyz2)
-			xyz1.multiplyScalar(0.5);
-			let c = this.XYZ2RGB(xyz1);
+			let lab1 = this.RGB2Lab(color1);
+			let lab2 = this.RGB2Lab(color2);
+			let mid = this.getMidpoint(lab1, lab2);
+			let c = this.Lab2RGB(mid);
 			this.setColor3("#"+c.getHexString());
 		},
 		
@@ -189,6 +258,7 @@ module.exports = function() {
 				let params = {
 					ColorInput1: '#FFFFFF',
 					ColorInput2: '#FFFFFF',
+					ColorSpace: 'RGB',
 					Exposure: 0.0
 				};
 				
@@ -219,6 +289,12 @@ module.exports = function() {
 
 					if (params.Exposure) {
 						self.setExposure(params.Exposure);
+					}
+				});
+
+				gui.add(params, 'ColorSpace', ['RGB', 'HSL']).onChange(function(event) {
+					if (params.ColorSpace) {
+						self.setColorSpace(params.ColorSpace == 'RGB' ? RGB_MODE : HSL_MODE);
 					}
 				});
 			}
@@ -270,17 +346,41 @@ module.exports = function() {
 		addGeometries: function() {
 			
 			let self = this;
-			
+
+			RGBCube = new THREE.Object3D();
+			scene.add(RGBCube);
 			let geometry = new THREE.BoxGeometry(RGBCubeSize, RGBCubeSize, RGBCubeSize);
 			geometry.translate(0, RGBCubeSize/2, 0);
 			let cube = new THREE.Mesh(geometry, wireframeMaterial);
-			scene.add(cube);
-			self.showPoints(geometry, distinctColors);
-			camera.lookAt(self.getCentroid(geometry));
+			RGBCube.add(cube);
+			self.showPoints(geometry, distinctColors, 1.0, RGBCube);
 			
 			for (let i = 0; i < geometry.vertices.length; i++) {
-				self.labelPoint(geometry.vertices[i], i.toString(), new THREE.Color('black'));
+				self.labelPoint(geometry.vertices[i], i.toString(), new THREE.Color('black'), RGBCube);
 			}
+
+			HSLCone = new THREE.Object3D();
+			scene.add(HSLCone);
+			geometry = new THREE.ConeGeometry(HSLConeRadius, HSLConeHeight, 6);
+			geometry.translate(0, 3*HSLConeHeight/2, 0);
+			let cone = new THREE.Mesh(geometry, wireframeMaterial);
+			HSLCone.add(cone);
+			let HSLColors = [new THREE.Color("hsl(0, 100%, 100%)"),
+							new THREE.Color("hsl(0, 100%, 50%)"),
+							new THREE.Color("hsl(300, 100%, 50%)"),
+							new THREE.Color("hsl(240, 100%, 50%)"),
+							new THREE.Color("hsl(180, 100%, 50%)"),
+							new THREE.Color("hsl(120, 100%, 50%)"),
+							new THREE.Color("hsl(60, 100%, 50%)"),
+							new THREE.Color("hsl(0, 0%, 50%)")];
+			self.showPoints(geometry, HSLColors, 1.0, HSLCone);
+
+			geometry = new THREE.ConeGeometry(HSLConeRadius, HSLConeHeight, 6);
+			geometry.rotateX(Math.PI);
+			geometry.translate(0, HSLConeHeight/2, 0);
+			cone = new THREE.Mesh(geometry, wireframeMaterial);
+			HSLCone.add(cone);
+			self.showPoint(geometry.vertices[0], new THREE.Color("hsl(0, 0%, 0%)"), 1.0, HSLCone);
 			
 			let radius = 2;
 			geometry = new THREE.SphereGeometry(radius, 64, 64);
@@ -314,6 +414,10 @@ module.exports = function() {
 			let m6 = shadeMaterial.clone();
 			cube3 = new THREE.Mesh(geometry, m6);
 			scene.add(cube3);
+
+			
+			// hide one of color space reference frames
+			this.setColorSpace(visualizeMode);
 		},
 
 		enableControls: function() {
@@ -393,21 +497,21 @@ module.exports = function() {
 			}
 		},
 		
-		showPoints: function(geometry, color, opacity) {
+		showPoints: function(geometry, color, opacity, parent=scene) {
 			
 			let self = this;
 			
 			for (let i = 0; i < geometry.vertices.length; i++) {
 				if (Array.isArray(color)) {
-					self.showPoint(geometry.vertices[i], color[i], opacity);
+					self.showPoint(geometry.vertices[i], color[i], opacity, parent);
 				}
 				else {
-					self.showPoint(geometry.vertices[i], color, opacity);
+					self.showPoint(geometry.vertices[i], color, opacity, parent);
 				}
 			}
 		},
 		
-		showPoint: function(pt, color, opacity) {
+		showPoint: function(pt, color, opacity, parent=scene) {
 			color = color || 0xff0000;
 			opacity = opacity || 1;
 			let dotGeometry = new THREE.Geometry();
@@ -420,17 +524,17 @@ module.exports = function() {
 				transparent: true
 			});
 			let dot = new THREE.Points(dotGeometry, dotMaterial);
-			scene.add(dot);
+			parent.add(dot);
 		},
 		
-		showVector: function(vector, origin, color) {
+		showVector: function(vector, origin, color, parent=scene) {
 			
 			color = color || 0xff0000;
 			let arrowHelper = new THREE.ArrowHelper(vector, origin, vector.length(), color);
-			scene.add(arrowHelper);
+			parent.add(arrowHelper);
 		},
 		
-		drawLine: function(pt1, pt2) {
+		drawLine: function(pt1, pt2, parent=scene) {
 			
 			let material = new THREE.LineBasicMaterial({ color: 0x0000ff });
 			let geometry = new THREE.Geometry();
@@ -438,7 +542,7 @@ module.exports = function() {
 			geometry.vertices.push(new THREE.Vector3(pt2.x, pt2.y, pt2.z));
 			
 			let line = new THREE.Line(geometry, material);
-			scene.add(line);
+			parent.add(line);
 		},
 		
 		getDistance: function(pt1, pt2) {
@@ -472,14 +576,14 @@ module.exports = function() {
 			return triangleGeometry;
 		},
 		
-		activateAxesHelper: function() {
+		activateAxesHelper: function(parent=scene) {
 			
 			let self = this;
 			let axesHelper = new THREE.AxesHelper(self.settings.axesHelper.axisLength);
-			scene.add(axesHelper);
+			parent.add(axesHelper);
 		},
 		
-		labelAxes: function() {
+		labelAxes: function(parent=scene) {
 			
 			let self = this;
 			if (self.settings.font.enable) {
@@ -487,19 +591,19 @@ module.exports = function() {
 				let textMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
 				let mesh = new THREE.Mesh(textGeometry, textMaterial);
 				textGeometry.translate(0, self.settings.axesHelper.axisLength, 0);
-				scene.add(mesh);
+				parent.add(mesh);
 				
 				textGeometry = new THREE.TextGeometry('X', self.settings.font.fontStyle);
 				textMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
 				mesh = new THREE.Mesh(textGeometry, textMaterial);
 				textGeometry.translate(self.settings.axesHelper.axisLength, 0, 0);
-				scene.add(mesh);
+				parent.add(mesh);
 				
 				textGeometry = new THREE.TextGeometry('Z', self.settings.font.fontStyle);
 				textMaterial = new THREE.MeshBasicMaterial({ color: 0x0000ff });
 				mesh = new THREE.Mesh(textGeometry, textMaterial);
 				textGeometry.translate(0, 0, self.settings.axesHelper.axisLength);
-				scene.add(mesh);
+				parent.add(mesh);
 			}
 		},
 		
@@ -528,7 +632,7 @@ module.exports = function() {
 		},
 		
 		/* 	Inputs: pt - point in space to label, in the form of object with x, y, and z properties; label - text content for label; color - optional */
-		labelPoint: function(pt, label, color) {
+		labelPoint: function(pt, label, color, parent=scene) {
 			
 			let self = this;
 			if (self.settings.font.enable) {
@@ -537,7 +641,7 @@ module.exports = function() {
 				let textMaterial = new THREE.MeshBasicMaterial({ color: color });
 				let mesh = new THREE.Mesh(textGeometry, textMaterial);
 				textGeometry.translate(pt.x, pt.y, pt.z);
-				scene.add(mesh);
+				parent.add(mesh);
 			}
 		},
 		
@@ -606,6 +710,45 @@ module.exports = function() {
 			let g = (-0.091169*c.x+0.25243*c.y+0.015708*c.z);
 			let b = (0.00092090*c.x-0.0025498*c.y+0.1786*c.z);
 			return new THREE.Color(r, g, b);
+		},
+
+		RGB2Lab: function(color)
+		{
+			let xyz = this.RGB2XYZ(color);
+			let xn=95.05;
+			let yn=100;
+			let zn=108.88;
+			let f = function(t) {
+				let d=6.0/29.0;
+				if (t > d*d*d)
+					return Math.pow(t, 1.0/3.0);
+				else
+					return t / (3 * d * d) + 4.0/29.0;
+			};
+			let fx = f(xyz.x / xn);
+			let fy = f(xyz.y / yn);
+			let fz = f(xyz.z / zn);
+			let L = 116*fy - 16;
+			let a = 500*(fx - fy);
+			let b = 200*(fy - fz);
+			return new THREE.Vector3(L, a, b);
+		},
+
+		Lab2RGB: function(c) {
+			let f = function(t) {
+				let d=6.0/29.0;
+				if (t > d)
+					return t*t*t;
+				else
+					return 3*d*d*(t-4.0/29.0);
+			};
+			let xn=95.05;
+			let yn=100;
+			let zn=108.88;
+			let x = xn * f((c.x+16.0)/116 + c.y/500.0);
+			let y = yn * f((c.x+16.0)/116);
+			let z = zn * f((c.x+16.0)/116 - c.z/200.0);
+			return this.XYZ2RGB(new THREE.Vector3(x, y, z));
 		}
 	}
 }

@@ -76,7 +76,7 @@
 		tr {
 			
 			&.divider {
-				height: 20px;
+				height: 20lrlrpx;
 				vertical-align: bottom;
 			}
 			
@@ -106,11 +106,16 @@
 			padding-right: 10px;
 		}
 		
-		#portrait, #portrait2 {
+		#portrait {
 			display: flex;
 			border: 1px solid black;
 			width: 100px;
-			margin-bottom: 8px;
+		}
+
+		#portrait2 {
+			display: flex;
+			border: 1px solid black;
+			width: 100px;
 		}
 	}
 }
