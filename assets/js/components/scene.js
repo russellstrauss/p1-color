@@ -388,13 +388,11 @@ module.exports = function() {
 
 			gui.addColor(self.settings.UI, 'ColorInput1').onChange(function(event) {
 				
-				self.setGUIValue(gui, 'LuminanceScale', 50); // Reset luminance scalar when choosing a color so it does not affect color choice
 				self.updateColors();
 			});
 			
 			gui.addColor(self.settings.UI, 'ColorInput2').onChange(function(event) {
 				
-				self.setGUIValue(gui, 'LuminanceScale', 50); 
 				self.updateColors();
 			});
 

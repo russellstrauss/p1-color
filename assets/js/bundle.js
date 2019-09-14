@@ -154,10 +154,10 @@ module.exports = function () {
 
       if (this.settings.UI.ColorOutputMode === 'Blend') {
         outputColor = blendedColor;
-      }
-
-      if (this.settings.UI.ColorOutputMode === 'Background') {
+      } else if (this.settings.UI.ColorOutputMode === 'Background') {
         outputColor = complementaryColor;
+      } else if (this.settings.UI.ColorOutputMode === 'Accent') {
+        outputColor = this.getAccentColor(colorInput1, colorInput2);
       }
 
       return outputColor;
@@ -188,6 +188,53 @@ module.exports = function () {
       var mid = this.getMidpoint(lab1, lab2);
       var c = this.Lab2RGB(mid);
       return new THREE.Color('#' + c.getHexString());
+    },
+    getAccentColor: function getAccentColor(color1, color2) {
+      var output = new THREE.Color();
+      var hsl1 = color1.getHSL(color1);
+      var hsl2 = color2.getHSL(color2); // 1. luminance
+
+      var threshold_delta_luminance = 0.2;
+      var h, s, l;
+      var ave_l = (hsl1.l + hsl2.l) / 2;
+
+      if (Math.abs(hsl1.l - hsl2.l) < threshold_delta_luminance) {
+        // input colors are close in luminance
+        var delta_l = 0.3;
+
+        if (ave_l > 1 - threshold_delta_luminance * 0.5 - delta_l) {
+          // inputs are very bright
+          l = ave_l - delta_l;
+        } else {
+          l = ave_l + delta_l;
+        }
+      } else {
+        l = ave_l;
+      } // 2. hue
+
+
+      var repeat = function repeat(x, a) {
+        return x - Math.floor(x / a) * a;
+      };
+
+      var deltaAngle = function deltaAngle(x, y, range) {
+        var num = repeat(y - x, range);
+        if (num > range * 0.5) num -= range;
+        return num;
+      };
+
+      var ave_h = (hsl1.h + hsl2.h) * 0.5;
+      h = ave_h;
+      if (Math.abs(deltaAngle(ave_h, hsl1.h, 1.0)) < 0.25) h = ave_h + 0.5;
+      h = repeat(h, 1.0); // 3. saturation
+
+      var ave_s = (hsl1.s + hsl2.s) * 0.5;
+      s = ave_s;
+      var threshold_saturation = 0.3;
+      if (ave_s < threshold_saturation) s += 0.5;
+      output.setHSL(h, s, l);
+      console.log(h, s, l);
+      return output;
     },
     setPosByRGB: function setPosByRGB(mesh, color) {
       mesh.position.setX((color.r - 0.5) * RGBCubeSize);
@@ -290,12 +337,9 @@ module.exports = function () {
       });
       gui.domElement.parentElement.classList.add('color-1-picker');
       gui.addColor(self.settings.UI, 'ColorInput1').onChange(function (event) {
-        self.setGUIValue(gui, 'LuminanceScale', 50); // Reset luminance scalar when choosing a color so it does not affect color choice
-
         self.updateColors();
       });
       gui.addColor(self.settings.UI, 'ColorInput2').onChange(function (event) {
-        self.setGUIValue(gui, 'LuminanceScale', 50);
         self.updateColors();
       });
       gui.add(self.settings.UI, 'Exposure', -100, 100).onChange(function (event) {
@@ -318,7 +362,7 @@ module.exports = function () {
       });
     },
     updateModeEvents: function updateModeEvents() {
-      if (this.settings.UI.ColorOutputMode === 'Blend') {
+      if (this.settings.UI.ColorOutputMode === 'Blend' || this.settings.UI.ColorOutputMode === 'Accent') {
         this.showMesh(sphere3);
       } else {
         this.hideMesh(sphere3);
@@ -732,9 +776,9 @@ module.exports = function () {
       }, 250));
     },
     RGB2XYZ: function RGB2XYZ(color) {
-      var r = color.r;
-      var g = color.g;
-      var b = color.b;
+      var r = Math.min(color.r, 0.99);
+      var g = Math.min(color.g, 0.99);
+      var b = Math.min(color.b, 0.99);
       var x = (0.49 * r + 0.31 * g + 0.2 * b) / 0.17697;
       var y = (0.17697 * r + 0.81240 * g + 0.01063 * b) / 0.17697;
       var z = (0.01 * g + 0.99 * b) / 0.17697;
@@ -742,9 +786,9 @@ module.exports = function () {
     },
     XYZ2RGB: function XYZ2RGB(c) // c is Vector3
     {
-      var r = 0.41847 * c.x - 0.15866 * c.y - 0.082835 * c.z;
-      var g = -0.091169 * c.x + 0.25243 * c.y + 0.015708 * c.z;
-      var b = 0.00092090 * c.x - 0.0025498 * c.y + 0.1786 * c.z;
+      var r = Math.min(0.41847 * c.x - 0.15866 * c.y - 0.082835 * c.z, 0.99);
+      var g = Math.min(-0.091169 * c.x + 0.25243 * c.y + 0.015708 * c.z, 0.99);
+      var b = Math.min(0.00092090 * c.x - 0.0025498 * c.y + 0.1786 * c.z, 0.99);
       return new THREE.Color(r, g, b);
     },
     RGB2Lab: function RGB2Lab(color) {
