@@ -70,6 +70,7 @@ module.exports = function() {
 				ColorInput2: '#FFFFFF',
 				ColorSpace: 'RGB',
 				Exposure: 0.0,
+				LuminanceScale: 1.0,
 				ColorOutputMode: 'Blend'
 			}
 		},
@@ -112,11 +113,21 @@ module.exports = function() {
 			animate();
 		},
 		
+		scaleColorLuminance: function(color) {
+			
+			let colorObj = new THREE.Color(color);
+			let hsl = colorObj.getHSL(colorObj);
+			hsl = hsl.offsetHSL(0, 0, hsl.l * this.settings.UI.LuminanceScale);
+			console.log(hsl.l);
+			return new THREE.Color(hsl);
+		},
+		
 		setColor1: function(color) {
 			
 			let color1Element = document.querySelector('#color1');
-			color1Element.style.backgroundColor = color;
-			color1.set(color);
+			let scaledColor = this.scaleColorLuminance(color);
+			color1Element.style.backgroundColor = '#' + scaledColor.getHexString();
+			color1.set(scaledColor);
 			color1Mesh.color = color1;
 			
 			
@@ -130,8 +141,9 @@ module.exports = function() {
 		setColor2: function(color) {
 			
 			let color2Element = document.querySelector('#color2');
-			color2Element.style.backgroundColor = color;
-			color2.set(color);
+			let scaledColor = this.scaleColorLuminance(color);
+			color2Element.style.backgroundColor = '#' + scaledColor.getHexString();
+			color2.set(scaledColor);
 			color2Mesh.color = color2;
 			
 			sphere2.material = color2Mesh;
@@ -156,6 +168,17 @@ module.exports = function() {
 			return outputColor;
 		},
 		
+		setOutputColor: function(color) {
+			
+			let color3Element = document.querySelector('#color3');
+			color3Element.style.backgroundColor = '#' + color.getHexString();
+			color3.set(color);
+			color3Mesh.color = color3;
+			sphere3.material = color3Mesh;
+			
+			this.setColorPositions(sphere3, color3);
+		},
+		
 		setColorPositions: function(colorMesh, color) {
 			
 			if (visualizeMode == RGB_MODE)
@@ -172,26 +195,6 @@ module.exports = function() {
 			message = message || '';
 			let hex = color.getHexString();
 			console.log('%c' + message + '                                                                                                                                 ', 'background: #' + hex + ';');
-		},
-		
-		setOutputColor: function(color) {
-			
-			let color3Element = document.querySelector('#color3');
-			color3Element.style.backgroundColor = '#' + color.getHexString();
-			
-			color3.set(color);
-			color3Mesh.color = color3;
-			
-			sphere3.material = color3Mesh;
-
-			if (visualizeMode == RGB_MODE)
-			{
-				this.setPosByRGB(sphere3, color3);
-			}
-			else
-			{
-				this.setPosByHSL(sphere3, color3);
-			}
 		},
 		
 		getBlendedColor: function(color1, color2) {
@@ -301,6 +304,15 @@ module.exports = function() {
 			});
 		},
 		
+		updateColors: function() {
+			
+			this.setColor1(this.settings.UI.ColorInput1);
+			this.setColor2(this.settings.UI.ColorInput2);
+			this.setColorPositions(sphere1, color1);
+			this.setColorPositions(sphere2, color2);
+			this.setColorPositions(sphere3, color3);
+		},
+		
 		addInputUI: function() {
 			
 			let self = this;
@@ -310,16 +322,12 @@ module.exports = function() {
 
 			gui.addColor(self.settings.UI, 'ColorInput1').onChange(function(event) {
 
-				let colorObj = new THREE.Color(self.settings.UI.ColorInput1);
-				let hex = colorObj.getHexString();
-				self.setColor1(self.settings.UI.ColorInput1);
+				self.updateColors();
 			});
 			
 			gui.addColor(self.settings.UI, 'ColorInput2').onChange(function(event) {
 
-				let colorObj = new THREE.Color(self.settings.UI.ColorInput2);
-				let hex = colorObj.getHexString();
-				self.setColor2(self.settings.UI.ColorInput2);
+				self.updateColors();
 			});
 
 			gui.add(self.settings.UI, 'Exposure', -100, 100).onChange(function(event) {
@@ -328,6 +336,13 @@ module.exports = function() {
 				self.showMesh(cube1);
 				self.showMesh(cube2);
 				self.showMesh(cube3);
+			});
+			
+			gui.add(self.settings.UI, 'LuminanceScale', 0.0, 100.0).onChange(function(event) {
+				
+				self.settings.UI.LuminanceScale = parseFloat(event / 100);
+				console.log(self.settings.UI.LuminanceScale);
+				self.updateColors();
 			});
 
 			gui.add(self.settings.UI, 'ColorSpace', ['RGB', 'HSL']).onChange(function(event) {
