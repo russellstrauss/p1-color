@@ -260,14 +260,14 @@ module.exports = function () {
         this.setPosByRGB(sphere3, color3);
       }
     },
-    hideObject: function hideObject(object) {
+    hideMesh: function hideMesh(object) {
       object.traverse(function (child) {
         if (child instanceof THREE.Mesh) {
           child.visible = false;
         }
       });
     },
-    showObject: function showObject(object) {
+    showMesh: function showMesh(object) {
       object.traverse(function (child) {
         if (child instanceof THREE.Mesh) {
           child.visible = true;
@@ -290,6 +290,9 @@ module.exports = function () {
       });
       gui.add(self.settings.UI, 'Exposure', -100, 100).onChange(function (event) {
         self.setExposure(self.settings.UI.Exposure);
+        self.showMesh(cube1);
+        self.showMesh(cube2);
+        self.showMesh(cube3);
       });
       gui.add(self.settings.UI, 'ColorSpace', ['RGB', 'HSL']).onChange(function (event) {
         self.setColorSpace(self.settings.UI.ColorSpace === 'RGB' ? RGB_MODE : HSL_MODE);
@@ -301,9 +304,9 @@ module.exports = function () {
     },
     updateModeEvents: function updateModeEvents(mode) {
       if (mode === 'Blend') {
-        this.showObject(sphere3);
+        this.showMesh(sphere3);
       } else {
-        this.hideObject(sphere3);
+        this.hideMesh(sphere3);
       }
 
       if (mode === 'Background') {
@@ -401,7 +404,11 @@ module.exports = function () {
       geometry.translate(0, RGBCubeSize / 2, 0);
       var m6 = shadeMaterial.clone();
       cube3 = new THREE.Mesh(geometry, m6);
-      scene.add(cube3); // hide one of color space reference frames
+      scene.add(cube3); // Hide exposure cubes until user changes exposure value
+
+      this.hideMesh(cube1);
+      this.hideMesh(cube2);
+      this.hideMesh(cube3); // hide one of color space reference frames
 
       this.setColorSpace(visualizeMode);
     },

@@ -286,7 +286,7 @@ module.exports = function() {
 			}
 		},
 		
-		hideObject: function(object) {
+		hideMesh: function(object) {
 			
 			object.traverse(function(child) {
 				if (child instanceof THREE.Mesh) {
@@ -295,7 +295,7 @@ module.exports = function() {
 			});
 		},
 		
-		showObject: function(object) {
+		showMesh: function(object) {
 			
 			object.traverse(function(child) {
 				if (child instanceof THREE.Mesh) {
@@ -328,6 +328,9 @@ module.exports = function() {
 			gui.add(self.settings.UI, 'Exposure', -100, 100).onChange(function(event) {
 
 				self.setExposure(self.settings.UI.Exposure);
+				self.showMesh(cube1);
+				self.showMesh(cube2);
+				self.showMesh(cube3);
 			});
 
 			gui.add(self.settings.UI, 'ColorSpace', ['RGB', 'HSL']).onChange(function(event) {
@@ -344,10 +347,10 @@ module.exports = function() {
 		updateModeEvents: function(mode) {
 			
 			if (mode === 'Blend') {
-				this.showObject(sphere3);
+				this.showMesh(sphere3);
 			}
 			else {
-				this.hideObject(sphere3);
+				this.hideMesh(sphere3);
 			}
 			if (mode === 'Background') {
 				backgroundColorMesh.opacity = 1;
@@ -469,7 +472,11 @@ module.exports = function() {
 			let m6 = shadeMaterial.clone();
 			cube3 = new THREE.Mesh(geometry, m6);
 			scene.add(cube3);
-
+			
+			// Hide exposure cubes until user changes exposure value
+			this.hideMesh(cube1);
+			this.hideMesh(cube2);
+			this.hideMesh(cube3);
 			
 			// hide one of color space reference frames
 			this.setColorSpace(visualizeMode);
