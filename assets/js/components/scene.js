@@ -27,8 +27,8 @@ module.exports = function() {
 	var color1Mesh = new THREE.MeshPhongMaterial({side: THREE.DoubleSide, color: color1});
 	var color2Mesh = new THREE.MeshPhongMaterial({side: THREE.DoubleSide, color: color2});
 	var color3Mesh = new THREE.MeshPhongMaterial({side: THREE.DoubleSide, color: color3});
-	var backgroundColor = new THREE.Color();
-	var backgroundColorMesh = new THREE.MeshPhongMaterial({side: THREE.DoubleSide, color: backgroundColor});
+	var backgroundColor = new THREE.Color(), backgroundColorMesh = new THREE.MeshPhongMaterial({side: THREE.DoubleSide, color: backgroundColor});
+	var blendColor = new THREE.Color(), blendColorMesh = new THREE.MeshPhongMaterial({side: THREE.DoubleSide, color: blendColor});
 	var RGBCubeSize = 20;
 	var HSLConeRadius = 15;
 	var HSLConeHeight = 15;
@@ -37,7 +37,7 @@ module.exports = function() {
 	return {
 		
 		settings: {
-			colorOutputMode: 'Blend',
+			colorOutputMode: 'Background',
 			activateLightHelpers: false,
 			axesHelper: {
 				activateAxesHelper: false,
@@ -54,7 +54,8 @@ module.exports = function() {
 				}
 			},
 			messageDuration: 2000,
-			showBackground: true
+			showBackground: true,
+			errorLogging: false
 		},
 		
 		init: function() {
@@ -103,6 +104,11 @@ module.exports = function() {
 			color1Element.style.backgroundColor = color;
 			color1.set(color);
 			color1Mesh.color = color1;
+			
+			let outputColor = new THREE.Color();
+			if (this.settings.colorOutputMode === 'Blend') {
+				outputColor = this.getBlendedColor(color1, color2);
+			}
 
 			sphere1.material = color1Mesh;
 			if (visualizeMode == RGB_MODE)
@@ -113,7 +119,7 @@ module.exports = function() {
 			{
 				this.setPosByHSL(sphere1, color1);
 			}
-			this.updateOutputColor();
+			this.setOutputColor(outputColor);
 		},
 		
 		setColor2: function(color) {
@@ -122,6 +128,12 @@ module.exports = function() {
 			color2Element.style.backgroundColor = color;
 			color2.set(color);
 			color2Mesh.color = color2;
+			
+			let outputColor = new THREE.Color();
+			if (this.settings.colorOutputMode === 'Blend') {
+				outputColor = this.getBlendedColor(color1, color2);
+				
+			}
 
 			sphere2.material = color2Mesh;
 			if (visualizeMode == RGB_MODE)
@@ -132,12 +144,14 @@ module.exports = function() {
 			{
 				this.setPosByHSL(sphere2, color2);
 			}
-			this.updateOutputColor();
+			this.setOutputColor(outputColor);
 		},
 		
-		setColor3: function(color) {
+		setOutputColor: function(color) {
+			
 			let color3Element = document.querySelector('#color3');
 			color3Element.style.backgroundColor = color;
+			
 			color3.set(color);
 			color3Mesh.color = color3;
 			backgroundColorMesh.color = this.getComplementaryColor(color3);
@@ -153,11 +167,12 @@ module.exports = function() {
 			}
 		},
 		
-		setColors: function(color1, color2, color3) {
-			
-			this.setColor1(color1);
-			this.setColor2(color2);
-			this.setColor3(color3);
+		getBlendedColor: function(color1, color2) {
+			let lab1 = this.RGB2Lab(color1);
+			let lab2 = this.RGB2Lab(color2);
+			let mid = this.getMidpoint(lab1, lab2);
+			let c = this.Lab2RGB(mid);
+			return '#' + c.getHexString();
 		},
 
 		setPosByRGB: function(mesh, color)
@@ -169,7 +184,7 @@ module.exports = function() {
 
 		setPosByHSL: function(mesh, color)
 		{
-			let hsl = color.getHSL();
+			let hsl = color.getHSL(color);
 			let r = HSLConeRadius * (1 - 2*Math.abs(hsl.l - 0.5));
 			let x = r * Math.sin(-hsl.h * Math.PI * 2);
 			let z = r * Math.cos(hsl.h * Math.PI * 2);
@@ -241,14 +256,6 @@ module.exports = function() {
 			}
 		},
 		
-		updateOutputColor: function() {
-			let lab1 = this.RGB2Lab(color1);
-			let lab2 = this.RGB2Lab(color2);
-			let mid = this.getMidpoint(lab1, lab2);
-			let c = this.Lab2RGB(mid);
-			this.setColor3("#"+c.getHexString());
-		},
-		
 		addInputUI: function() {
 			
 			let self = this;
@@ -301,7 +308,7 @@ module.exports = function() {
 			gui.add(params, 'ColorOutputMode', ['Blend', 'Background', 'Accent', 'Triad']).onChange(function(event) {
 
 				if (params.ColorOutputMode) {
-					//self.setMode(params.ColorOutputMode);
+					self.settings.colorOutputMode = params.ColorOutputMode
 				}
 			});
 		},
@@ -622,16 +629,18 @@ module.exports = function() {
 
 			loader.load(fontPath, function(font) { // success event
 				
-				console.log('Fonts loaded successfully.');
+				if (self.settings.errorLogging) console.log('Fonts loaded successfully.');
 				self.settings.font.fontStyle.font = font;
 				
 				self.begin();
 				if (self.settings.axesHelper.activateAxesHelper) self.labelAxes();
-			}, function(event) { // in progress event.
-				console.log('Attempting to load fonts.')
-			}, function(event) { // error event
+			},
+			function(event) { // in progress event.
+				if (self.settings.errorLogging) console.log('Attempting to load fonts.')
+			},
+			function(event) { // error event
 				
-				console.log('Error loading fonts. Webserver required due to CORS policy.');
+				if (self.settings.errorLogging) console.log('Error loading fonts. Webserver required due to CORS policy.');
 				self.settings.font.enable = false;
 				self.begin();
 			});

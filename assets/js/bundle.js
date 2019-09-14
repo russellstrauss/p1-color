@@ -32,10 +32,15 @@ module.exports = function () {
     side: THREE.DoubleSide,
     color: color3
   });
-  var backgroundColor = new THREE.Color();
-  var backgroundColorMesh = new THREE.MeshPhongMaterial({
+  var backgroundColor = new THREE.Color(),
+      backgroundColorMesh = new THREE.MeshPhongMaterial({
     side: THREE.DoubleSide,
     color: backgroundColor
+  });
+  var blendColor = new THREE.Color(),
+      blendColorMesh = new THREE.MeshPhongMaterial({
+    side: THREE.DoubleSide,
+    color: blendColor
   });
   var RGBCubeSize = 20;
   var HSLConeRadius = 15;
@@ -43,7 +48,7 @@ module.exports = function () {
   var RGBCube, HSLCone;
   return {
     settings: {
-      colorOutputMode: 'Blend',
+      colorOutputMode: 'Background',
       activateLightHelpers: false,
       axesHelper: {
         activateAxesHelper: false,
@@ -60,7 +65,8 @@ module.exports = function () {
         }
       },
       messageDuration: 2000,
-      showBackground: true
+      showBackground: true,
+      errorLogging: false
     },
     init: function init() {
       var self = this;
@@ -103,6 +109,12 @@ module.exports = function () {
       color1Element.style.backgroundColor = color;
       color1.set(color);
       color1Mesh.color = color1;
+      var outputColor = new THREE.Color();
+
+      if (this.settings.colorOutputMode === 'Blend') {
+        outputColor = this.getBlendedColor(color1, color2);
+      }
+
       sphere1.material = color1Mesh;
 
       if (visualizeMode == RGB_MODE) {
@@ -111,13 +123,19 @@ module.exports = function () {
         this.setPosByHSL(sphere1, color1);
       }
 
-      this.updateOutputColor();
+      this.setOutputColor(outputColor);
     },
     setColor2: function setColor2(color) {
       var color2Element = document.querySelector('#color2');
       color2Element.style.backgroundColor = color;
       color2.set(color);
       color2Mesh.color = color2;
+      var outputColor = new THREE.Color();
+
+      if (this.settings.colorOutputMode === 'Blend') {
+        outputColor = this.getBlendedColor(color1, color2);
+      }
+
       sphere2.material = color2Mesh;
 
       if (visualizeMode == RGB_MODE) {
@@ -126,9 +144,9 @@ module.exports = function () {
         this.setPosByHSL(sphere2, color2);
       }
 
-      this.updateOutputColor();
+      this.setOutputColor(outputColor);
     },
-    setColor3: function setColor3(color) {
+    setOutputColor: function setOutputColor(color) {
       var color3Element = document.querySelector('#color3');
       color3Element.style.backgroundColor = color;
       color3.set(color);
@@ -142,10 +160,12 @@ module.exports = function () {
         this.setPosByHSL(sphere3, color3);
       }
     },
-    setColors: function setColors(color1, color2, color3) {
-      this.setColor1(color1);
-      this.setColor2(color2);
-      this.setColor3(color3);
+    getBlendedColor: function getBlendedColor(color1, color2) {
+      var lab1 = this.RGB2Lab(color1);
+      var lab2 = this.RGB2Lab(color2);
+      var mid = this.getMidpoint(lab1, lab2);
+      var c = this.Lab2RGB(mid);
+      return '#' + c.getHexString();
     },
     setPosByRGB: function setPosByRGB(mesh, color) {
       mesh.position.setX((color.r - 0.5) * RGBCubeSize);
@@ -153,7 +173,7 @@ module.exports = function () {
       mesh.position.setZ((color.b - 0.5) * RGBCubeSize);
     },
     setPosByHSL: function setPosByHSL(mesh, color) {
-      var hsl = color.getHSL();
+      var hsl = color.getHSL(color);
       var r = HSLConeRadius * (1 - 2 * Math.abs(hsl.l - 0.5));
       var x = r * Math.sin(-hsl.h * Math.PI * 2);
       var z = r * Math.cos(hsl.h * Math.PI * 2);
@@ -213,13 +233,6 @@ module.exports = function () {
         this.setPosByRGB(sphere3, color3);
       }
     },
-    updateOutputColor: function updateOutputColor() {
-      var lab1 = this.RGB2Lab(color1);
-      var lab2 = this.RGB2Lab(color2);
-      var mid = this.getMidpoint(lab1, lab2);
-      var c = this.Lab2RGB(mid);
-      this.setColor3("#" + c.getHexString());
-    },
     addInputUI: function addInputUI() {
       var self = this;
       var params = {
@@ -256,7 +269,8 @@ module.exports = function () {
         }
       });
       gui.add(params, 'ColorOutputMode', ['Blend', 'Background', 'Accent', 'Triad']).onChange(function (event) {
-        if (params.ColorOutputMode) {//self.setMode(params.ColorOutputMode);
+        if (params.ColorOutputMode) {
+          self.settings.colorOutputMode = params.ColorOutputMode;
         }
       });
     },
@@ -530,16 +544,16 @@ module.exports = function () {
       fontPath = 'assets/vendors/js/three.js/examples/fonts/helvetiker_regular.typeface.json';
       loader.load(fontPath, function (font) {
         // success event
-        console.log('Fonts loaded successfully.');
+        if (self.settings.errorLogging) console.log('Fonts loaded successfully.');
         self.settings.font.fontStyle.font = font;
         self.begin();
         if (self.settings.axesHelper.activateAxesHelper) self.labelAxes();
       }, function (event) {
         // in progress event.
-        console.log('Attempting to load fonts.');
+        if (self.settings.errorLogging) console.log('Attempting to load fonts.');
       }, function (event) {
         // error event
-        console.log('Error loading fonts. Webserver required due to CORS policy.');
+        if (self.settings.errorLogging) console.log('Error loading fonts. Webserver required due to CORS policy.');
         self.settings.font.enable = false;
         self.begin();
       });
