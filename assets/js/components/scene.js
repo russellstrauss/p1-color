@@ -427,25 +427,14 @@ module.exports = function() {
 			RGBCube.add(cube);
 			self.showPoints(geometry, distinctColors, 1.0, RGBCube);
 			
-			// Label Cube Vertices
-			for (let i = 0; i < geometry.vertices.length; i++) {
-				let label = 'RGB(' + (distinctColors[i].r * 255).toString() + ', ' + (distinctColors[i].g * 255).toString() + ', ' + (distinctColors[i].b * 255).toString() + ')';
-				let location = geometry.vertices[i].clone();
-				
-				if (i > 3) {
-					location.x -= 13;
-				}
-				else {
-					location.x += 3;
-				}
-				self.labelPoint(location, label, new THREE.Color('black'), RGBCube);
-			}
+			self.labelRGBCubeVertices(geometry);
 
 			HSLCone = new THREE.Object3D();
 			scene.add(HSLCone);
 			geometry = new THREE.ConeGeometry(HSLConeRadius, HSLConeHeight, 6);
 			geometry.translate(0, 3*HSLConeHeight/2, 0);
 			let cone = new THREE.Mesh(geometry, wireframeMaterial);
+			self.labelPoint({x: geometry.vertices[0].x + 3, y: geometry.vertices[0].y, z: geometry.vertices[0].z}, 'Luminance 100%', new THREE.Color('black'), HSLCone);
 			HSLCone.add(cone);
 			let HSLColors = [new THREE.Color("hsl(0, 100%, 100%)"),
 							new THREE.Color("hsl(0, 100%, 50%)"),
@@ -463,6 +452,7 @@ module.exports = function() {
 			cone = new THREE.Mesh(geometry, wireframeMaterial);
 			HSLCone.add(cone);
 			self.showPoint(geometry.vertices[0], new THREE.Color("hsl(0, 0%, 0%)"), 1.0, HSLCone);
+			self.labelPoint({x: geometry.vertices[0].x + 3, y: geometry.vertices[0].y, z: geometry.vertices[0].z}, 'Luminance 0%', new THREE.Color('black'), HSLCone);
 			
 			let radius = 2;
 			geometry = new THREE.SphereGeometry(radius, 64, 64);
@@ -504,6 +494,23 @@ module.exports = function() {
 			
 			// hide one of color space reference frames
 			this.setColorSpace(visualizeMode);
+		},
+		
+		labelRGBCubeVertices: function(geometry) {
+			
+			// Label Cube Vertices
+			for (let i = 0; i < geometry.vertices.length; i++) {
+				let label = 'RGB(' + (distinctColors[i].r * 255).toString() + ', ' + (distinctColors[i].g * 255).toString() + ', ' + (distinctColors[i].b * 255).toString() + ')';
+				let location = geometry.vertices[i].clone();
+				
+				if (i > 3) {
+					location.x -= 13;
+				}
+				else {
+					location.x += 3;
+				}
+				this.labelPoint(location, label, new THREE.Color('black'), RGBCube);
+			}
 		},
 
 		enableControls: function() {
