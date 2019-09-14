@@ -119,14 +119,8 @@ module.exports = function() {
 			
 			
 			sphere1.material = color1Mesh;
-			if (visualizeMode == RGB_MODE)
-			{
-				this.setPosByRGB(sphere1, color1);
-			}
-			else
-			{
-				this.setPosByHSL(sphere1, color1);
-			}
+			this.setColorPositions(sphere1, color1);
+			
 			let outputColor = this.getOutputColor(color1, color2);
 			this.setOutputColor(outputColor);
 		},
@@ -139,14 +133,8 @@ module.exports = function() {
 			color2Mesh.color = color2;
 			
 			sphere2.material = color2Mesh;
-			if (visualizeMode == RGB_MODE)
-			{
-				this.setPosByRGB(sphere2, color2);
-			}
-			else
-			{
-				this.setPosByHSL(sphere2, color2);
-			}
+			this.setColorPositions(sphere2, color2);
+
 			let outputColor = this.getOutputColor(color1, color2);
 			this.setOutputColor(outputColor);
 		},
@@ -168,6 +156,18 @@ module.exports = function() {
 			}
 			
 			return outputColor;
+		},
+		
+		setColorPositions: function(colorMesh, color) {
+			
+			if (visualizeMode == RGB_MODE)
+			{
+				this.setPosByRGB(colorMesh, color);
+			}
+			else
+			{
+				this.setPosByHSL(colorMesh, color);
+			}
 		},
 		
 		logColor: function(color, message) {
