@@ -3,6 +3,7 @@
 
 module.exports = function () {
   var renderer, scene, camera, controls;
+  var grid = new THREE.GridHelper(1000, 100);
   var stats = new Stats();
   var wireframeMaterial = new THREE.MeshBasicMaterial({
     wireframe: true,
@@ -46,14 +47,15 @@ module.exports = function () {
   var HSLConeRadius = 15;
   var HSLConeHeight = 15;
   var RGBCube, HSLCone;
+  var zBufferOffset = .05;
   return {
     settings: {
-      colorOutputMode: 'Background',
       activateLightHelpers: false,
       axesHelper: {
         activateAxesHelper: false,
         axisLength: 10
       },
+      showFloor: true,
       activateStatsFPS: false,
       font: {
         enable: true,
@@ -65,8 +67,20 @@ module.exports = function () {
         }
       },
       messageDuration: 2000,
-      showBackground: true,
-      errorLogging: false
+      showBackground: false,
+      errorLogging: false,
+      defaultCameraLocation: {
+        x: 0,
+        y: 40,
+        z: 40
+      },
+      UI: {
+        ColorInput1: '#FFFFFF',
+        ColorInput2: '#FFFFFF',
+        ColorSpace: 'RGB',
+        Exposure: 0.0,
+        ColorOutputMode: 'Blend'
+      }
     },
     init: function init() {
       var self = this;
@@ -76,20 +90,19 @@ module.exports = function () {
     begin: function begin() {
       var self = this;
       self.setUpScene();
-      self.addFloor();
       self.enableControls();
       self.resizeRendererOnWindowResize();
       self.setUpLights();
       self.addGeometries();
       self.addInputUI();
 
+      if (self.settings.showFloor) {
+        self.addFloor();
+      }
+
       if (self.settings.showBackground) {
         self.addBackgroundColorDemonstration();
       }
-
-      camera.position.x = -20;
-      camera.position.y = 40;
-      camera.position.z = 30;
 
       if (self.settings.activateStatsFPS) {
         self.enableStats();
@@ -109,12 +122,6 @@ module.exports = function () {
       color1Element.style.backgroundColor = color;
       color1.set(color);
       color1Mesh.color = color1;
-      var outputColor = new THREE.Color();
-
-      if (this.settings.colorOutputMode === 'Blend') {
-        outputColor = this.getBlendedColor(color1, color2);
-      }
-
       sphere1.material = color1Mesh;
 
       if (visualizeMode == RGB_MODE) {
@@ -123,6 +130,7 @@ module.exports = function () {
         this.setPosByHSL(sphere1, color1);
       }
 
+      var outputColor = this.getOutputColor(color1, color2);
       this.setOutputColor(outputColor);
     },
     setColor2: function setColor2(color) {
@@ -130,12 +138,6 @@ module.exports = function () {
       color2Element.style.backgroundColor = color;
       color2.set(color);
       color2Mesh.color = color2;
-      var outputColor = new THREE.Color();
-
-      if (this.settings.colorOutputMode === 'Blend') {
-        outputColor = this.getBlendedColor(color1, color2);
-      }
-
       sphere2.material = color2Mesh;
 
       if (visualizeMode == RGB_MODE) {
@@ -144,14 +146,36 @@ module.exports = function () {
         this.setPosByHSL(sphere2, color2);
       }
 
+      var outputColor = this.getOutputColor(color1, color2);
       this.setOutputColor(outputColor);
+    },
+    getOutputColor: function getOutputColor(colorInput1, colorInput2) {
+      var outputColor = new THREE.Color();
+      var blendedColor = this.getBlendedColor(colorInput1, colorInput2);
+      var complementaryColor = this.getComplementaryColor(blendedColor);
+
+      if (this.settings.UI.ColorOutputMode === 'Blend') {
+        outputColor = blendedColor;
+      } else if (this.settings.UI.ColorOutputMode === 'Background') {
+        outputColor = complementaryColor;
+        backgroundColorMesh.color = outputColor;
+        scene.background = outputColor;
+        grid.material.color = this.getComplementaryColor(outputColor);
+        document.querySelector('body').style.color = '#' + this.getComplementaryColor(outputColor).getHexString();
+      }
+
+      return outputColor;
+    },
+    logColor: function logColor(color, message) {
+      message = message || '';
+      var hex = color.getHexString();
+      console.log('%c' + message + '                                                                                                                                 ', 'background: #' + hex + ';');
     },
     setOutputColor: function setOutputColor(color) {
       var color3Element = document.querySelector('#color3');
-      color3Element.style.backgroundColor = color;
+      color3Element.style.backgroundColor = '#' + color.getHexString();
       color3.set(color);
       color3Mesh.color = color3;
-      backgroundColorMesh.color = this.getComplementaryColor(color3);
       sphere3.material = color3Mesh;
 
       if (visualizeMode == RGB_MODE) {
@@ -165,7 +189,7 @@ module.exports = function () {
       var lab2 = this.RGB2Lab(color2);
       var mid = this.getMidpoint(lab1, lab2);
       var c = this.Lab2RGB(mid);
-      return '#' + c.getHexString();
+      return new THREE.Color('#' + c.getHexString());
     },
     setPosByRGB: function setPosByRGB(mesh, color) {
       mesh.position.setX((color.r - 0.5) * RGBCubeSize);
@@ -235,47 +259,29 @@ module.exports = function () {
     },
     addInputUI: function addInputUI() {
       var self = this;
-      var params = {
-        ColorInput1: '#FFFFFF',
-        ColorInput2: '#FFFFFF',
-        ColorSpace: 'RGB',
-        Exposure: 0.0,
-        ColorOutputMode: self.settings.colorOutputMode
-      };
       var gui = new dat.GUI();
       gui.domElement.parentElement.classList.add('color-1-picker');
-      gui.addColor(params, 'ColorInput1').onChange(function (event) {
-        if (params.ColorInput1) {
-          var colorObj = new THREE.Color(params.ColorInput1);
-          var hex = colorObj.getHexString();
-          self.setColor1(params.ColorInput1);
-        }
+      gui.addColor(self.settings.UI, 'ColorInput1').onChange(function (event) {
+        var colorObj = new THREE.Color(self.settings.UI.ColorInput1);
+        var hex = colorObj.getHexString();
+        self.setColor1(self.settings.UI.ColorInput1);
       });
-      gui.addColor(params, 'ColorInput2').onChange(function (event) {
-        if (params.ColorInput2) {
-          var colorObj = new THREE.Color(params.ColorInput2);
-          var hex = colorObj.getHexString();
-          self.setColor2(params.ColorInput2);
-        }
+      gui.addColor(self.settings.UI, 'ColorInput2').onChange(function (event) {
+        var colorObj = new THREE.Color(self.settings.UI.ColorInput2);
+        var hex = colorObj.getHexString();
+        self.setColor2(self.settings.UI.ColorInput2);
       });
-      gui.add(params, 'Exposure', -100, 100).onChange(function (event) {
-        if (params.Exposure) {
-          self.setExposure(params.Exposure);
-        }
+      gui.add(self.settings.UI, 'Exposure', -100, 100).onChange(function (event) {
+        self.setExposure(self.settings.UI.Exposure);
       });
-      gui.add(params, 'ColorSpace', ['RGB', 'HSL']).onChange(function (event) {
-        if (params.ColorSpace) {
-          self.setColorSpace(params.ColorSpace === 'RGB' ? RGB_MODE : HSL_MODE);
-        }
+      gui.add(self.settings.UI, 'ColorSpace', ['RGB', 'HSL']).onChange(function (event) {
+        self.setColorSpace(self.settings.UI.ColorSpace === 'RGB' ? RGB_MODE : HSL_MODE);
       });
-      gui.add(params, 'ColorOutputMode', ['Blend', 'Background', 'Accent', 'Triad']).onChange(function (event) {
-        if (params.ColorOutputMode) {
-          self.settings.colorOutputMode = params.ColorOutputMode;
-        }
+      gui.add(self.settings.UI, 'ColorOutputMode', ['Blend', 'Background', 'Accent', 'Triad']).onChange(function (event) {
+        self.settings.UI.ColorOutputMode = event;
       });
     },
     addBackgroundColorDemonstration: function addBackgroundColorDemonstration() {
-      var zBufferOffset = .05;
       var planeGeometry = new THREE.PlaneGeometry(RGBCubeSize, RGBCubeSize, 1);
       planeGeometry.translate(0, RGBCubeSize / 2, -(RGBCubeSize / 2) + zBufferOffset);
       var backdropMesh = new THREE.Mesh(planeGeometry, backgroundColorMesh);
@@ -291,21 +297,8 @@ module.exports = function () {
       scene.add(colorInput2Mesh);
     },
     getComplementaryColor: function getComplementaryColor(color) {
-      var result = color.clone();
-      result = result.offsetHSL(.5, 0, 0);
-      return result;
-    },
-    hueShift: function hueShift(hue, angleInDegrees) {
-      var result;
-      result = hue + angleConversion;
-
-      while (result > 1) {
-        result -= 1;
-      }
-
-      while (result < 0) {
-        result += 1;
-      }
+      var result = new THREE.Color(color).clone();
+      result = result.offsetHSL(.5, 0, 0); // Hue shift by 180 degrees
 
       return result;
     },
@@ -315,6 +308,7 @@ module.exports = function () {
       scene.add(RGBCube);
       var geometry = new THREE.BoxGeometry(RGBCubeSize, RGBCubeSize, RGBCubeSize);
       geometry.translate(0, RGBCubeSize / 2, 0);
+      geometry.translate(0, zBufferOffset, 0);
       var cube = new THREE.Mesh(geometry, wireframeMaterial);
       RGBCube.add(cube);
       self.showPoints(geometry, distinctColors, 1.0, RGBCube);
@@ -407,19 +401,11 @@ module.exports = function () {
       }
     },
     addFloor: function addFloor() {
-      var planeGeometry = new THREE.PlaneBufferGeometry(100, 100);
-      planeGeometry.rotateX(-Math.PI / 2);
-      var planeMaterial = new THREE.ShadowMaterial({
-        opacity: 0.2
-      });
-      var plane = new THREE.Mesh(planeGeometry, planeMaterial);
-      plane.position.y = -1;
-      plane.receiveShadow = true;
-      scene.add(plane);
-      var helper = new THREE.GridHelper(1000, 100);
-      helper.material.opacity = .25;
-      helper.material.transparent = true;
-      scene.add(helper);
+      grid.material.color = new THREE.Color('#ccc');
+      scene.background = new THREE.Color(0xf0f0f0);
+      grid.material.opacity = .2;
+      grid.material.transparent = true;
+      scene.add(grid);
     },
     setUpScene: function setUpScene() {
       var self = this;
@@ -429,6 +415,7 @@ module.exports = function () {
       renderer = new THREE.WebGLRenderer();
       renderer.setSize(window.innerWidth, window.innerHeight);
       document.body.appendChild(renderer.domElement);
+      this.setCameraLocation(self.settings.defaultCameraLocation);
 
       if (self.settings.axesHelper.activateAxesHelper) {
         self.activateAxesHelper();
@@ -579,11 +566,37 @@ module.exports = function () {
       var self = this;
       var message = document.getElementById('message');
       document.addEventListener('keyup', function (event) {
-        var L = 76;
+        var esc = 27;
 
-        if (event.keyCode === L) {// do stuff when pressing key
+        if (event.keyCode === esc) {
+          self.resetScene();
+          message.textContent = 'Reset scene';
+          setTimeout(function () {
+            message.textContent = '';
+          }, self.settings.messageDuration);
         }
       });
+    },
+    resetScene: function resetScene() {
+      var self = this;
+
+      for (var i = scene.children.length - 1; i >= 0; i--) {
+        var obj = scene.children[i];
+        scene.remove(obj);
+      }
+
+      color1 = new THREE.Color();
+      color2 = new THREE.Color();
+      color3 = new THREE.Color();
+      self.addFloor();
+      self.addGeometries();
+      self.setUpLights();
+      self.setCameraLocation(self.settings.defaultCameraLocation);
+    },
+    setCameraLocation: function setCameraLocation(pt) {
+      camera.position.x = pt.x;
+      camera.position.y = pt.y;
+      camera.position.z = pt.z;
     },
     getCentroid: function getCentroid(geometry) {
       var result = {};
