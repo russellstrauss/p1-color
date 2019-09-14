@@ -360,7 +360,16 @@ module.exports = function() {
 			self.showPoints(geometry, distinctColors, 1.0, RGBCube);
 			
 			for (let i = 0; i < geometry.vertices.length; i++) {
-				self.labelPoint(geometry.vertices[i], i.toString(), new THREE.Color('black'), RGBCube);
+				let label = 'RGB(' + (distinctColors[i].r * 255).toString() + ', ' + (distinctColors[i].g * 255).toString() + ', ' + (distinctColors[i].b * 255).toString() + ')';
+				let location = geometry.vertices[i].clone();
+				
+				if (i > 3) {
+					location.x -= 13;
+				}
+				else {
+					location.x += 3;
+				}
+				self.labelPoint(location, label, new THREE.Color('black'), RGBCube);
 			}
 
 			HSLCone = new THREE.Object3D();
