@@ -9,6 +9,12 @@ module.exports = function () {
     wireframe: true,
     color: 0x08CDFA
   });
+  var invisibleMaterial = new THREE.MeshBasicMaterial({
+    transparent: true,
+    opacity: 0
+  });
+  var backgroundSwatch1 = new THREE.Mesh();
+  var backgroundSwatch2 = new THREE.Mesh();
   var shadeMaterial = new THREE.MeshPhongMaterial({
     side: THREE.DoubleSide
   });
@@ -36,7 +42,9 @@ module.exports = function () {
   var backgroundColor = new THREE.Color(),
       backgroundColorMesh = new THREE.MeshPhongMaterial({
     side: THREE.DoubleSide,
-    color: backgroundColor
+    color: backgroundColor,
+    transparent: true,
+    opacity: 1
   });
   var blendColor = new THREE.Color(),
       blendColorMesh = new THREE.MeshPhongMaterial({
@@ -67,7 +75,7 @@ module.exports = function () {
         }
       },
       messageDuration: 2000,
-      showBackground: false,
+      showBackground: true,
       errorLogging: false,
       defaultCameraLocation: {
         x: 0,
@@ -95,6 +103,7 @@ module.exports = function () {
       self.setUpLights();
       self.addGeometries();
       self.addInputUI();
+      self.updateModeEvents(self.settings.UI.ColorOutputMode);
 
       if (self.settings.showFloor) {
         self.addFloor();
@@ -144,12 +153,11 @@ module.exports = function () {
 
       if (this.settings.UI.ColorOutputMode === 'Blend') {
         outputColor = blendedColor;
-      } else if (this.settings.UI.ColorOutputMode === 'Background') {
+      }
+
+      if (this.settings.UI.ColorOutputMode === 'Background') {
         outputColor = complementaryColor;
         backgroundColorMesh.color = outputColor;
-        scene.background = outputColor;
-        grid.material.color = this.getComplementaryColor(outputColor);
-        document.querySelector('body').style.color = '#' + this.getComplementaryColor(outputColor).getHexString();
       }
 
       return outputColor;
@@ -274,7 +282,25 @@ module.exports = function () {
       });
       gui.add(self.settings.UI, 'ColorOutputMode', ['Blend', 'Background', 'Accent', 'Triad']).onChange(function (event) {
         self.settings.UI.ColorOutputMode = event;
+        self.updateModeEvents(event);
       });
+    },
+    updateModeEvents: function updateModeEvents(mode) {
+      if (mode === 'Blend') {
+        sphere3.material = color3Mesh;
+      } else {
+        sphere3.material = invisibleMaterial;
+      }
+
+      if (mode === 'Background') {
+        backgroundColorMesh.opacity = 1;
+        backgroundSwatch1.material = color1Mesh;
+        backgroundSwatch2.material = color2Mesh;
+      } else {
+        backgroundColorMesh.opacity = 0;
+        backgroundSwatch1.material = invisibleMaterial;
+        backgroundSwatch2.material = invisibleMaterial;
+      }
     },
     addBackgroundColorDemonstration: function addBackgroundColorDemonstration() {
       var planeGeometry = new THREE.PlaneGeometry(RGBCubeSize, RGBCubeSize, 1);
@@ -283,13 +309,13 @@ module.exports = function () {
       scene.add(backdropMesh);
       var inputSwatchSize = RGBCubeSize / 3;
       planeGeometry = new THREE.PlaneGeometry(inputSwatchSize, inputSwatchSize, 1);
-      planeGeometry.translate(-2 * inputSwatchSize / 3, RGBCubeSize + -3 * inputSwatchSize / 3, -(RGBCubeSize / 2) + 2 * zBufferOffset);
-      var colorInput1Mesh = new THREE.Mesh(planeGeometry, color1Mesh);
-      scene.add(colorInput1Mesh);
+      planeGeometry.translate(-2 * inputSwatchSize / 3, RGBCubeSize - 5 * inputSwatchSize / 6, -(RGBCubeSize / 2) + 5 * zBufferOffset);
+      backgroundSwatch1 = new THREE.Mesh(planeGeometry, invisibleMaterial);
+      scene.add(backgroundSwatch1);
       planeGeometry = new THREE.PlaneGeometry(inputSwatchSize, inputSwatchSize, 1);
-      planeGeometry.translate(RGBCubeSize / 4, RGBCubeSize / 4, -(RGBCubeSize / 2) + 2 * zBufferOffset);
-      var colorInput2Mesh = new THREE.Mesh(planeGeometry, color2Mesh);
-      scene.add(colorInput2Mesh);
+      planeGeometry.translate(inputSwatchSize - inputSwatchSize / 3, inputSwatchSize / 2 + inputSwatchSize / 3, -(RGBCubeSize / 2) + 3 * zBufferOffset);
+      backgroundSwatch2 = new THREE.Mesh(planeGeometry, invisibleMaterial);
+      scene.add(backgroundSwatch2);
     },
     getComplementaryColor: function getComplementaryColor(color) {
       var result = new THREE.Color(color).clone();

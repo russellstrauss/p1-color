@@ -47,6 +47,7 @@
 	position: absolute;
 	bottom: 20px;
 	left: 20px;
+	color: black;
 	
 	.legend-title {
 		font-size: 18px;
@@ -76,7 +77,7 @@
 		tr {
 			
 			&.divider {
-				height: 20lrlrpx;
+				height: 20px;
 				vertical-align: bottom;
 			}
 			
