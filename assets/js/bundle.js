@@ -81,7 +81,7 @@ module.exports = function () {
         ColorInput2: '#FFFFFF',
         ColorSpace: 'RGB',
         Exposure: 0.0,
-        LuminanceScale: 1.0,
+        LuminanceScale: 0.0,
         ColorOutputMode: 'Blend'
       }
     },
