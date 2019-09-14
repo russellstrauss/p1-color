@@ -70,7 +70,7 @@ module.exports = function() {
 				ColorInput2: '#FFFFFF',
 				ColorSpace: 'RGB',
 				Exposure: 0.0,
-				LuminanceScale: 0.0,
+				LuminanceScale: 50.0,
 				ColorOutputMode: 'Blend'
 			}
 		},
@@ -117,8 +117,8 @@ module.exports = function() {
 			
 			let colorObj = new THREE.Color(color);
 			let hsl = colorObj.getHSL(colorObj);
-			hsl = hsl.offsetHSL(0, 0, hsl.l * this.settings.UI.LuminanceScale);
-			console.log(hsl.l);
+			hsl = hsl.setHSL(hsl.h, hsl.s, (this.settings.UI.LuminanceScale/100));
+			
 			return new THREE.Color(hsl);
 		},
 		
@@ -317,7 +317,7 @@ module.exports = function() {
 			
 			let self = this;
 			
-			let gui = new dat.GUI();
+			let gui = new dat.GUI({ width: 300 });
 			gui.domElement.parentElement.classList.add('color-1-picker');
 
 			gui.addColor(self.settings.UI, 'ColorInput1').onChange(function(event) {
@@ -340,8 +340,7 @@ module.exports = function() {
 			
 			gui.add(self.settings.UI, 'LuminanceScale', 0.0, 100.0).onChange(function(event) {
 				
-				self.settings.UI.LuminanceScale = parseFloat(event / 100);
-				console.log(self.settings.UI.LuminanceScale);
+				self.settings.UI.LuminanceScale = parseFloat(event);
 				self.updateColors();
 			});
 

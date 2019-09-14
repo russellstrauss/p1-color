@@ -81,7 +81,7 @@ module.exports = function () {
         ColorInput2: '#FFFFFF',
         ColorSpace: 'RGB',
         Exposure: 0.0,
-        LuminanceScale: 0.0,
+        LuminanceScale: 50.0,
         ColorOutputMode: 'Blend'
       }
     },
@@ -122,8 +122,7 @@ module.exports = function () {
     scaleColorLuminance: function scaleColorLuminance(color) {
       var colorObj = new THREE.Color(color);
       var hsl = colorObj.getHSL(colorObj);
-      hsl = hsl.offsetHSL(0, 0, hsl.l * this.settings.UI.LuminanceScale);
-      console.log(hsl.l);
+      hsl = hsl.setHSL(hsl.h, hsl.s, this.settings.UI.LuminanceScale / 100);
       return new THREE.Color(hsl);
     },
     setColor1: function setColor1(color) {
@@ -279,7 +278,9 @@ module.exports = function () {
     },
     addInputUI: function addInputUI() {
       var self = this;
-      var gui = new dat.GUI();
+      var gui = new dat.GUI({
+        width: 300
+      });
       gui.domElement.parentElement.classList.add('color-1-picker');
       gui.addColor(self.settings.UI, 'ColorInput1').onChange(function (event) {
         self.updateColors();
@@ -294,8 +295,7 @@ module.exports = function () {
         self.showMesh(cube3);
       });
       gui.add(self.settings.UI, 'LuminanceScale', 0.0, 100.0).onChange(function (event) {
-        self.settings.UI.LuminanceScale = parseFloat(event / 100);
-        console.log(self.settings.UI.LuminanceScale);
+        self.settings.UI.LuminanceScale = parseFloat(event);
         self.updateColors();
       });
       gui.add(self.settings.UI, 'ColorSpace', ['RGB', 'HSL']).onChange(function (event) {
