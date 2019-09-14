@@ -313,6 +313,15 @@ module.exports = function() {
 			this.setColorPositions(sphere3, color3);
 		},
 		
+		setGUIValue: function(gui, input, value) {
+			
+			gui.__controllers.forEach(function(controller) {
+				if (controller.property === input) {
+					controller.setValue(value);
+				}
+			});
+		},
+		
 		addInputUI: function() {
 			
 			let self = this;
@@ -321,12 +330,14 @@ module.exports = function() {
 			gui.domElement.parentElement.classList.add('color-1-picker');
 
 			gui.addColor(self.settings.UI, 'ColorInput1').onChange(function(event) {
-
+				
+				self.setGUIValue(gui, 'LuminanceScale', 50); // Reset luminance scalar when choosing a color so it does not affect color choice
 				self.updateColors();
 			});
 			
 			gui.addColor(self.settings.UI, 'ColorInput2').onChange(function(event) {
-
+				
+				self.setGUIValue(gui, 'LuminanceScale', 50); 
 				self.updateColors();
 			});
 
