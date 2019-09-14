@@ -9,15 +9,12 @@ module.exports = function () {
     wireframe: true,
     color: 0x08CDFA
   });
-  var invisibleMaterial = new THREE.MeshBasicMaterial({
-    transparent: true,
-    opacity: 0
-  });
   var translucentMaterial = new THREE.MeshBasicMaterial({
     transparent: true,
     opacity: .3,
     color: 0x08CDFA
   });
+  var backgroundBase = new THREE.Mesh();
   var backgroundSwatch1 = new THREE.Mesh();
   var backgroundSwatch2 = new THREE.Mesh();
   var shadeMaterial = new THREE.MeshPhongMaterial({
@@ -43,13 +40,6 @@ module.exports = function () {
   var color3Mesh = new THREE.MeshPhongMaterial({
     side: THREE.DoubleSide,
     color: color3
-  });
-  var backgroundColor = new THREE.Color(),
-      backgroundColorMesh = new THREE.MeshPhongMaterial({
-    side: THREE.DoubleSide,
-    color: backgroundColor,
-    transparent: true,
-    opacity: 1
   });
   var blendColor = new THREE.Color(),
       blendColorMesh = new THREE.MeshPhongMaterial({
@@ -80,7 +70,6 @@ module.exports = function () {
         }
       },
       messageDuration: 2000,
-      showBackground: true,
       errorLogging: false,
       defaultCameraLocation: {
         x: 0,
@@ -109,14 +98,11 @@ module.exports = function () {
       self.addGeometries();
       self.addInputUI();
       self.renderTitle();
-      self.updateModeEvents(self.settings.UI.ColorOutputMode);
+      self.addBackgroundGeometries();
+      self.updateModeEvents();
 
       if (self.settings.showFloor) {
         self.addFloor();
-      }
-
-      if (self.settings.showBackground) {
-        self.addBackgroundColorDemonstration();
       }
 
       if (self.settings.activateStatsFPS) {
@@ -163,7 +149,6 @@ module.exports = function () {
 
       if (this.settings.UI.ColorOutputMode === 'Background') {
         outputColor = complementaryColor;
-        backgroundColorMesh.color = outputColor;
       }
 
       return outputColor;
@@ -309,7 +294,7 @@ module.exports = function () {
         self.updateModeEvents();
       });
     },
-    updateModeEvents: function updateModeEvents(mode) {
+    updateModeEvents: function updateModeEvents() {
       if (this.settings.UI.ColorOutputMode === 'Blend') {
         this.showMesh(sphere3);
       } else {
@@ -317,10 +302,12 @@ module.exports = function () {
       }
 
       if (this.settings.UI.ColorOutputMode === 'Background') {
-        backgroundColorMesh.opacity = 1;
-        backgroundSwatch1.material = color1Mesh;
-        backgroundSwatch2.material = color2Mesh;
-        backgroundColorMesh.color = color3;
+        backgroundSwatch1.material.color = color1Mesh.color;
+        backgroundSwatch2.material.color = color2Mesh.color;
+        backgroundBase.material.color = color3Mesh.color;
+        this.showMesh(backgroundSwatch1);
+        this.showMesh(backgroundSwatch2);
+        this.showMesh(backgroundBase);
         translucentMaterial.color = color3;
         HSLCone.children.forEach(function (child) {
           if (child instanceof THREE.Mesh) {
@@ -330,9 +317,10 @@ module.exports = function () {
           }
         });
       } else {
-        backgroundColorMesh.opacity = 0;
-        backgroundSwatch1.material = invisibleMaterial;
-        backgroundSwatch2.material = invisibleMaterial;
+        // Not background mode
+        this.hideMesh(backgroundBase);
+        this.hideMesh(backgroundSwatch1);
+        this.hideMesh(backgroundSwatch2);
         HSLCone.children = HSLCone.children.filter(function (child) {
           if (child.material !== translucentMaterial) return true;
         });
@@ -340,25 +328,27 @@ module.exports = function () {
 
       if (this.settings.UI.ColorSpace === 'HSL') {
         // If switching to background mode while in HSL, don't show
-        backgroundColorMesh.opacity = 0;
-        backgroundSwatch1.material = invisibleMaterial;
-        backgroundSwatch2.material = invisibleMaterial;
+        this.hideMesh(backgroundBase);
+        this.hideMesh(backgroundSwatch1);
+        this.hideMesh(backgroundSwatch2);
       }
     },
-    addBackgroundColorDemonstration: function addBackgroundColorDemonstration() {
+    addBackgroundGeometries: function addBackgroundGeometries() {
       var planeGeometry = new THREE.PlaneGeometry(RGBCubeSize, RGBCubeSize, 1);
       planeGeometry.translate(0, RGBCubeSize / 2, -(RGBCubeSize / 2) + zBufferOffset);
-      var backdropMesh = new THREE.Mesh(planeGeometry, backgroundColorMesh);
-      scene.add(backdropMesh);
+      backgroundBase = new THREE.Mesh(planeGeometry, color3Mesh);
+      scene.add(backgroundBase);
       var inputSwatchSize = RGBCubeSize / 3;
       planeGeometry = new THREE.PlaneGeometry(inputSwatchSize, inputSwatchSize, 1);
       planeGeometry.translate(-2 * inputSwatchSize / 3, RGBCubeSize - 5 * inputSwatchSize / 6, -(RGBCubeSize / 2) + 5 * zBufferOffset);
-      backgroundSwatch1 = new THREE.Mesh(planeGeometry, invisibleMaterial);
+      backgroundSwatch1 = new THREE.Mesh(planeGeometry, color1Mesh);
       scene.add(backgroundSwatch1);
       planeGeometry = new THREE.PlaneGeometry(inputSwatchSize, inputSwatchSize, 1);
       planeGeometry.translate(inputSwatchSize - inputSwatchSize / 3, inputSwatchSize / 2 + inputSwatchSize / 3, -(RGBCubeSize / 2) + 3 * zBufferOffset);
-      backgroundSwatch2 = new THREE.Mesh(planeGeometry, invisibleMaterial);
+      backgroundSwatch2 = new THREE.Mesh(planeGeometry, color2Mesh);
       scene.add(backgroundSwatch2);
+      this.hideMesh(backgroundSwatch1);
+      this.hideMesh(backgroundSwatch2);
     },
     getComplementaryColor: function getComplementaryColor(color) {
       var result = new THREE.Color(color).clone();
@@ -404,7 +394,6 @@ module.exports = function () {
       cone = new THREE.Mesh(geometry, wireframeMaterial);
       HSLCone.add(cone);
       self.showPoint(geometry.vertices[0], new THREE.Color("hsl(0, 0%, 0%)"), 1.0, HSLCone);
-      console.log(HSLCone);
       var radius = 2;
       geometry = new THREE.SphereGeometry(radius, 64, 64);
       geometry.translate(0, RGBCubeSize / 2, 0);
