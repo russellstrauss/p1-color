@@ -5,6 +5,7 @@ module.exports = function() {
 	var stats = new Stats();
 	var wireframeMaterial = new THREE.MeshBasicMaterial({ wireframe: true, color: 0x08CDFA });
 	var invisibleMaterial = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 });
+	var translucentMaterial = new THREE.MeshBasicMaterial({transparent: true, opacity: .3, color: 0x08CDFA });
 	var backgroundSwatch1 = new THREE.Mesh();
 	var backgroundSwatch2 = new THREE.Mesh();
 	var shadeMaterial = new THREE.MeshPhongMaterial({
@@ -92,6 +93,7 @@ module.exports = function() {
 			self.setUpLights();
 			self.addGeometries();
 			self.addInputUI();
+			self.renderTitle();
 			self.updateModeEvents(self.settings.UI.ColorOutputMode);
 			if (self.settings.showFloor) {
 				self.addFloor();
@@ -336,28 +338,49 @@ module.exports = function() {
 			gui.add(self.settings.UI, 'ColorSpace', ['RGB', 'HSL']).onChange(function(event) {
 				
 				self.setColorSpace(self.settings.UI.ColorSpace === 'RGB' ? RGB_MODE : HSL_MODE);
+				self.updateModeEvents();
 			});
 			
 			gui.add(self.settings.UI, 'ColorOutputMode', ['Blend', 'Background', 'Accent', 'Triad']).onChange(function(event) {
 				self.settings.UI.ColorOutputMode = event;
-				self.updateModeEvents(event);
+				self.updateModeEvents();
 			});
 		},
 		
 		updateModeEvents: function(mode) {
 			
-			if (mode === 'Blend') {
+			if (this.settings.UI.ColorOutputMode === 'Blend') {
 				this.showMesh(sphere3);
 			}
 			else {
 				this.hideMesh(sphere3);
 			}
-			if (mode === 'Background') {
+			if (this.settings.UI.ColorOutputMode === 'Background') {
 				backgroundColorMesh.opacity = 1;
 				backgroundSwatch1.material = color1Mesh;
 				backgroundSwatch2.material = color2Mesh;
+				backgroundColorMesh.color = color3;
+				translucentMaterial.color = color3;
+				
+				HSLCone.children.forEach(function(child) {
+					if (child instanceof THREE.Mesh) {
+						let seeThrough = child.clone();
+						seeThrough.material = translucentMaterial;
+						HSLCone.children.push(seeThrough);
+					}
+				});
 			}
 			else {
+				backgroundColorMesh.opacity = 0;
+				backgroundSwatch1.material = invisibleMaterial;
+				backgroundSwatch2.material = invisibleMaterial;
+				
+				HSLCone.children = HSLCone.children.filter(function(child) {
+					if (child.material !== translucentMaterial) return true;
+				});
+			}
+			
+			if (this.settings.UI.ColorSpace === 'HSL') { // If switching to background mode while in HSL, don't show
 				backgroundColorMesh.opacity = 0;
 				backgroundSwatch1.material = invisibleMaterial;
 				backgroundSwatch2.material = invisibleMaterial;
@@ -404,6 +427,7 @@ module.exports = function() {
 			RGBCube.add(cube);
 			self.showPoints(geometry, distinctColors, 1.0, RGBCube);
 			
+			// Label Cube Vertices
 			for (let i = 0; i < geometry.vertices.length; i++) {
 				let label = 'RGB(' + (distinctColors[i].r * 255).toString() + ', ' + (distinctColors[i].g * 255).toString() + ', ' + (distinctColors[i].b * 255).toString() + ')';
 				let location = geometry.vertices[i].clone();
@@ -439,6 +463,8 @@ module.exports = function() {
 			cone = new THREE.Mesh(geometry, wireframeMaterial);
 			HSLCone.add(cone);
 			self.showPoint(geometry.vertices[0], new THREE.Color("hsl(0, 0%, 0%)"), 1.0, HSLCone);
+			
+			console.log(HSLCone);
 			
 			let radius = 2;
 			geometry = new THREE.SphereGeometry(radius, 64, 64);
@@ -837,6 +863,17 @@ module.exports = function() {
 			let y = yn * f((c.x+16.0)/116);
 			let z = zn * f((c.x+16.0)/116 - c.z/200.0);
 			return this.XYZ2RGB(new THREE.Vector3(x, y, z));
+		},
+		
+		renderTitle: function() {
+			
+			if (this.settings.font.enable) {
+				let textGeometry = new THREE.TextGeometry('Exploring 3D Color Space', this.settings.font.fontStyle);
+				let textMaterial = new THREE.MeshBasicMaterial({ color: new THREE.Color('black') });
+				let mesh = new THREE.Mesh(textGeometry, textMaterial);
+				textGeometry.translate(-RGBCubeSize/2.5, 0, RGBCubeSize * 2);
+				scene.add(mesh);
+			}
 		}
 	}
 }
