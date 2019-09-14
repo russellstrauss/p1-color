@@ -161,8 +161,11 @@ module.exports = function() {
 			if (this.settings.UI.ColorOutputMode === 'Blend') {
 				outputColor = blendedColor;
 			}
-			if (this.settings.UI.ColorOutputMode === 'Background') {
+			else if (this.settings.UI.ColorOutputMode === 'Background') {
 				outputColor = complementaryColor;
+			}
+			else if (this.settings.UI.ColorOutputMode === 'Accent') {
+				outputColor = this.getAccentColor(colorInput1, colorInput2);
 			}
 			
 			return outputColor;
@@ -203,6 +206,60 @@ module.exports = function() {
 			let mid = this.getMidpoint(lab1, lab2);
 			let c = this.Lab2RGB(mid);
 			return new THREE.Color('#' + c.getHexString());
+		},
+
+		getAccentColor: function(color1, color2) {
+			let output = new THREE.Color();
+			let hsl1 = color1.getHSL(color1);
+			let hsl2 = color2.getHSL(color2);
+
+			// 1. luminance
+			let threshold_delta_luminance = 0.2;
+			var h, s, l;
+			let ave_l = (hsl1.l + hsl2.l) / 2;
+			if (Math.abs(hsl1.l - hsl2.l) < threshold_delta_luminance) {
+				// input colors are close in luminance
+				let delta_l = 0.3;
+				if (ave_l > 1 - threshold_delta_luminance*0.5 - delta_l) {
+					// inputs are very bright
+					l = ave_l - delta_l;
+				}
+				else {
+					l = ave_l + delta_l;
+				}
+
+			}
+			else {
+				l = ave_l;
+			}
+
+			// 2. hue
+			var repeat = function(x, a) {
+				return x - Math.floor(x / a) * a;
+			};
+			var deltaAngle = function(x, y, range) {
+				var num = repeat(y - x, range);
+				if (num > range * 0.5)
+					num -= range;
+				return num;
+			};
+
+			let ave_h = (hsl1.h + hsl2.h) * 0.5;
+			h = ave_h;
+			if (Math.abs(deltaAngle(ave_h, hsl1.h, 1.0)) < 0.25)
+				h = ave_h + 0.5;
+			h = repeat(h, 1.0);
+
+			// 3. saturation
+			let ave_s = (hsl1.s + hsl2.s) * 0.5;
+			s = ave_s;
+			let threshold_saturation = 0.3;
+			if (ave_s < threshold_saturation)
+				s += 0.5;
+
+			output.setHSL(h, s, l);
+			console.log(h,s,l);
+			return output;
 		},
 
 		setPosByRGB: function(mesh, color)
@@ -369,7 +426,7 @@ module.exports = function() {
 		
 		updateModeEvents: function() {
 			
-			if (this.settings.UI.ColorOutputMode === 'Blend') {
+			if (this.settings.UI.ColorOutputMode === 'Blend' || this.settings.UI.ColorOutputMode === 'Accent') {
 				this.showMesh(sphere3);
 			}
 			else {
@@ -839,9 +896,9 @@ module.exports = function() {
 
 		RGB2XYZ: function(color)
 		{
-			let r = color.r;
-			let g = color.g;
-			let b = color.b;
+			let r = Math.min(color.r, 0.99);
+			let g = Math.min(color.g, 0.99);
+			let b = Math.min(color.b, 0.99);
 			let x = (   0.49*r +    0.31*g + 0.2*b) / 0.17697;
 			let y = (0.17697*r + 0.81240*g + 0.01063*b) / 0.17697;
 			let z = (               0.01*g + 0.99*b) / 0.17697;
@@ -850,9 +907,9 @@ module.exports = function() {
 
 		XYZ2RGB: function(c) // c is Vector3
 		{
-			let r = (0.41847*c.x-0.15866*c.y-0.082835*c.z);
-			let g = (-0.091169*c.x+0.25243*c.y+0.015708*c.z);
-			let b = (0.00092090*c.x-0.0025498*c.y+0.1786*c.z);
+			let r = Math.min((0.41847*c.x-0.15866*c.y-0.082835*c.z), 0.99);
+			let g = Math.min((-0.091169*c.x+0.25243*c.y+0.015708*c.z), 0.99);
+			let b = Math.min((0.00092090*c.x-0.0025498*c.y+0.1786*c.z), 0.99);
 			return new THREE.Color(r, g, b);
 		},
 
