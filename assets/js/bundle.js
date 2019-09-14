@@ -260,6 +260,20 @@ module.exports = function () {
         this.setPosByRGB(sphere3, color3);
       }
     },
+    hideObject: function hideObject(object) {
+      object.traverse(function (child) {
+        if (child instanceof THREE.Mesh) {
+          child.visible = false;
+        }
+      });
+    },
+    showObject: function showObject(object) {
+      object.traverse(function (child) {
+        if (child instanceof THREE.Mesh) {
+          child.visible = true;
+        }
+      });
+    },
     addInputUI: function addInputUI() {
       var self = this;
       var gui = new dat.GUI();
@@ -287,9 +301,9 @@ module.exports = function () {
     },
     updateModeEvents: function updateModeEvents(mode) {
       if (mode === 'Blend') {
-        sphere3.material = color3Mesh;
+        this.showObject(sphere3);
       } else {
-        sphere3.material = invisibleMaterial;
+        this.hideObject(sphere3);
       }
 
       if (mode === 'Background') {

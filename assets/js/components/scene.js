@@ -184,8 +184,9 @@ module.exports = function() {
 			
 			color3.set(color);
 			color3Mesh.color = color3;
-
+			
 			sphere3.material = color3Mesh;
+
 			if (visualizeMode == RGB_MODE)
 			{
 				this.setPosByRGB(sphere3, color3);
@@ -285,6 +286,24 @@ module.exports = function() {
 			}
 		},
 		
+		hideObject: function(object) {
+			
+			object.traverse(function(child) {
+				if (child instanceof THREE.Mesh) {
+					child.visible = false;
+				}
+			});
+		},
+		
+		showObject: function(object) {
+			
+			object.traverse(function(child) {
+				if (child instanceof THREE.Mesh) {
+					child.visible = true;
+				}
+			});
+		},
+		
 		addInputUI: function() {
 			
 			let self = this;
@@ -325,10 +344,10 @@ module.exports = function() {
 		updateModeEvents: function(mode) {
 			
 			if (mode === 'Blend') {
-				sphere3.material = color3Mesh;
+				this.showObject(sphere3);
 			}
 			else {
-				sphere3.material = invisibleMaterial;
+				this.hideObject(sphere3);
 			}
 			if (mode === 'Background') {
 				backgroundColorMesh.opacity = 1;
