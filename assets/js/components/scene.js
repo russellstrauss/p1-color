@@ -814,9 +814,9 @@ module.exports = function() {
 
 		RGB2XYZ: function(color)
 		{
-			let r = color.r;
-			let g = color.g;
-			let b = color.b;
+			let r = Math.min(color.r, 0.99);
+			let g = Math.min(color.g, 0.99);
+			let b = Math.min(color.b, 0.99);
 			let x = (   0.49*r +    0.31*g + 0.2*b) / 0.17697;
 			let y = (0.17697*r + 0.81240*g + 0.01063*b) / 0.17697;
 			let z = (               0.01*g + 0.99*b) / 0.17697;
@@ -825,9 +825,9 @@ module.exports = function() {
 
 		XYZ2RGB: function(c) // c is Vector3
 		{
-			let r = (0.41847*c.x-0.15866*c.y-0.082835*c.z);
-			let g = (-0.091169*c.x+0.25243*c.y+0.015708*c.z);
-			let b = (0.00092090*c.x-0.0025498*c.y+0.1786*c.z);
+			let r = Math.min((0.41847*c.x-0.15866*c.y-0.082835*c.z), 0.99);
+			let g = Math.min((-0.091169*c.x+0.25243*c.y+0.015708*c.z), 0.99);
+			let b = Math.min((0.00092090*c.x-0.0025498*c.y+0.1786*c.z), 0.99);
 			return new THREE.Color(r, g, b);
 		},
 
