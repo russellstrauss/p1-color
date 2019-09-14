@@ -37,12 +37,12 @@ module.exports = function() {
 	return {
 		
 		settings: {
+			colorOutputMode: 'Blend',
 			activateLightHelpers: false,
 			axesHelper: {
 				activateAxesHelper: false,
 				axisLength: 10
 			},
-			activateColorPickers: true,
 			activateStatsFPS: false,
 			font: {
 				enable: true,
@@ -54,7 +54,7 @@ module.exports = function() {
 				}
 			},
 			messageDuration: 2000,
-			showBackground: true 
+			showBackground: true
 		},
 		
 		init: function() {
@@ -74,7 +74,7 @@ module.exports = function() {
 			self.resizeRendererOnWindowResize();
 			self.setUpLights();
 			self.addGeometries();
-			self.addColorPickers();
+			self.addInputUI();
 			if (self.settings.showBackground) {
 				self.addBackgroundColorDemonstration();
 			}
@@ -249,55 +249,61 @@ module.exports = function() {
 			this.setColor3("#"+c.getHexString());
 		},
 		
-		addColorPickers: function() {
+		addInputUI: function() {
 			
 			let self = this;
+				
+			let params = {
+				ColorInput1: '#FFFFFF',
+				ColorInput2: '#FFFFFF',
+				ColorSpace: 'RGB',
+				Exposure: 0.0,
+				ColorOutputMode: self.settings.colorOutputMode
+			};
 			
-			if (self.settings.activateColorPickers) {
+			let gui = new dat.GUI();
+			gui.domElement.parentElement.classList.add('color-1-picker');
+
+			gui.addColor(params, 'ColorInput1').onChange(function(event) {
 				
-				let params = {
-					ColorInput1: '#FFFFFF',
-					ColorInput2: '#FFFFFF',
-					ColorSpace: 'RGB',
-					Exposure: 0.0
-				};
-				
-				let gui = new dat.GUI();
-				gui.domElement.parentElement.classList.add('color-1-picker');
-	
-				gui.addColor(params, 'ColorInput1').onChange(function(event) {
+				if (params.ColorInput1) {
 					
-					if (params.ColorInput1) {
-						
-						let colorObj = new THREE.Color(params.ColorInput1);
-						let hex = colorObj.getHexString();
-						self.setColor1(params.ColorInput1);
-					}
-				});
+					let colorObj = new THREE.Color(params.ColorInput1);
+					let hex = colorObj.getHexString();
+					self.setColor1(params.ColorInput1);
+				}
+			});
+			
+			gui.addColor(params, 'ColorInput2').onChange(function(event) {
 				
-				gui.addColor(params, 'ColorInput2').onChange(function(event) {
+				if (params.ColorInput2) {
 					
-					if (params.ColorInput2) {
-						
-						let colorObj = new THREE.Color(params.ColorInput2);
-						let hex = colorObj.getHexString();
-						self.setColor2(params.ColorInput2);
-					}
-				});
+					let colorObj = new THREE.Color(params.ColorInput2);
+					let hex = colorObj.getHexString();
+					self.setColor2(params.ColorInput2);
+				}
+			});
 
-				gui.add(params, 'Exposure', -100, 100).onChange(function(event) {
+			gui.add(params, 'Exposure', -100, 100).onChange(function(event) {
 
-					if (params.Exposure) {
-						self.setExposure(params.Exposure);
-					}
-				});
+				if (params.Exposure) {
+					self.setExposure(params.Exposure);
+				}
+			});
 
-				gui.add(params, 'ColorSpace', ['RGB', 'HSL']).onChange(function(event) {
-					if (params.ColorSpace) {
-						self.setColorSpace(params.ColorSpace == 'RGB' ? RGB_MODE : HSL_MODE);
-					}
-				});
-			}
+			gui.add(params, 'ColorSpace', ['RGB', 'HSL']).onChange(function(event) {
+				
+				if (params.ColorSpace) {
+					self.setColorSpace(params.ColorSpace === 'RGB' ? RGB_MODE : HSL_MODE);
+				}
+			});
+			
+			gui.add(params, 'ColorOutputMode', ['Blend', 'Background', 'Accent', 'Triad']).onChange(function(event) {
+
+				if (params.ColorOutputMode) {
+					//self.setMode(params.ColorOutputMode);
+				}
+			});
 		},
 		
 		addBackgroundColorDemonstration: function() {
