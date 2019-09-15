@@ -141,7 +141,6 @@ module.exports = function () {
     setColor2: function setColor2(color) {
       var color2Element = document.querySelector('#color2');
       var result = new THREE.Color(color);
-      console.log(this.settings.UI.scaleLuminance);
       if (this.settings.UI.scaleLuminance) result = this.scaleColorLuminance(color);
       color2Element.style.backgroundColor = '#' + result.getHexString();
       color2.set(result);
@@ -192,6 +191,12 @@ module.exports = function () {
       var mid = this.getMidpoint(lab1, lab2);
       var c = this.Lab2RGB(mid);
       return new THREE.Color('#' + c.getHexString());
+    },
+    getComplementaryColor: function getComplementaryColor(color) {
+      var result = new THREE.Color(color).clone();
+      result = result.offsetHSL(.5, 0, 0); // Hue shift by 180 degrees
+
+      return result;
     },
     getAccentColor: function getAccentColor(color1, color2) {
       var output = new THREE.Color();
@@ -425,12 +430,6 @@ module.exports = function () {
       scene.add(backgroundSwatch2);
       this.hideMesh(backgroundSwatch1);
       this.hideMesh(backgroundSwatch2);
-    },
-    getComplementaryColor: function getComplementaryColor(color) {
-      var result = new THREE.Color(color).clone();
-      result = result.offsetHSL(.5, 0, 0); // Hue shift by 180 degrees
-
-      return result;
     },
     addGeometries: function addGeometries() {
       var self = this;
