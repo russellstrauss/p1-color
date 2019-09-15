@@ -82,6 +82,7 @@ module.exports = function () {
         ColorSpace: 'RGB',
         Exposure: 0.0,
         LuminanceScale: 50.0,
+        scaleLuminance: false,
         ColorOutputMode: 'Blend'
       }
     },
@@ -127,9 +128,10 @@ module.exports = function () {
     },
     setColor1: function setColor1(color) {
       var color1Element = document.querySelector('#color1');
-      var scaledColor = this.scaleColorLuminance(color);
-      color1Element.style.backgroundColor = '#' + scaledColor.getHexString();
-      color1.set(scaledColor);
+      var result = new THREE.Color(color);
+      if (this.settings.UI.scaleLuminance) result = this.scaleColorLuminance(color);
+      color1Element.style.backgroundColor = '#' + result.getHexString();
+      color1.set(result);
       color1Mesh.color = color1;
       sphere1.material = color1Mesh;
       this.setColorPositions(sphere1, color1);
@@ -138,9 +140,11 @@ module.exports = function () {
     },
     setColor2: function setColor2(color) {
       var color2Element = document.querySelector('#color2');
-      var scaledColor = this.scaleColorLuminance(color);
-      color2Element.style.backgroundColor = '#' + scaledColor.getHexString();
-      color2.set(scaledColor);
+      var result = new THREE.Color(color);
+      console.log(this.settings.UI.scaleLuminance);
+      if (this.settings.UI.scaleLuminance) result = this.scaleColorLuminance(color);
+      color2Element.style.backgroundColor = '#' + result.getHexString();
+      color2.set(result);
       color2Mesh.color = color2;
       sphere2.material = color2Mesh;
       this.setColorPositions(sphere2, color2);
@@ -337,9 +341,13 @@ module.exports = function () {
       });
       gui.domElement.parentElement.classList.add('color-1-picker');
       gui.addColor(self.settings.UI, 'ColorInput1').onChange(function (event) {
+        self.setGUIValue(gui, 'LuminanceScale', 50);
+        self.settings.UI.scaleLuminance = false;
         self.updateColors();
       });
       gui.addColor(self.settings.UI, 'ColorInput2').onChange(function (event) {
+        self.setGUIValue(gui, 'LuminanceScale', 50);
+        self.settings.UI.scaleLuminance = false;
         self.updateColors();
       });
       gui.add(self.settings.UI, 'Exposure', -100, 100).onChange(function (event) {
@@ -349,6 +357,7 @@ module.exports = function () {
         self.showMesh(cube3);
       });
       gui.add(self.settings.UI, 'LuminanceScale', 0.0, 100.0).onChange(function (event) {
+        self.settings.UI.scaleLuminance = true;
         self.settings.UI.LuminanceScale = parseFloat(event);
         self.updateColors();
       });

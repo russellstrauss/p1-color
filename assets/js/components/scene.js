@@ -71,8 +71,9 @@ module.exports = function() {
 				ColorSpace: 'RGB',
 				Exposure: 0.0,
 				LuminanceScale: 50.0,
+				scaleLuminance: false,
 				ColorOutputMode: 'Blend'
-			}
+			},
 		},
 		
 		init: function() {
@@ -125,11 +126,11 @@ module.exports = function() {
 		setColor1: function(color) {
 			
 			let color1Element = document.querySelector('#color1');
-			let scaledColor = this.scaleColorLuminance(color);
-			color1Element.style.backgroundColor = '#' + scaledColor.getHexString();
-			color1.set(scaledColor);
+			let result = new THREE.Color(color);
+			if (this.settings.UI.scaleLuminance) result = this.scaleColorLuminance(color);
+			color1Element.style.backgroundColor = '#' + result.getHexString();
+			color1.set(result);
 			color1Mesh.color = color1;
-			
 			
 			sphere1.material = color1Mesh;
 			this.setColorPositions(sphere1, color1);
@@ -141,9 +142,11 @@ module.exports = function() {
 		setColor2: function(color) {
 			
 			let color2Element = document.querySelector('#color2');
-			let scaledColor = this.scaleColorLuminance(color);
-			color2Element.style.backgroundColor = '#' + scaledColor.getHexString();
-			color2.set(scaledColor);
+			let result = new THREE.Color(color);
+			console.log(this.settings.UI.scaleLuminance);
+			if (this.settings.UI.scaleLuminance) result = this.scaleColorLuminance(color);
+			color2Element.style.backgroundColor = '#' + result.getHexString();
+			color2.set(result);
 			color2Mesh.color = color2;
 			
 			sphere2.material = color2Mesh;
@@ -388,11 +391,15 @@ module.exports = function() {
 
 			gui.addColor(self.settings.UI, 'ColorInput1').onChange(function(event) {
 				
+				self.setGUIValue(gui, 'LuminanceScale', 50);
+				self.settings.UI.scaleLuminance = false;
 				self.updateColors();
 			});
 			
 			gui.addColor(self.settings.UI, 'ColorInput2').onChange(function(event) {
 				
+				self.setGUIValue(gui, 'LuminanceScale', 50);
+				self.settings.UI.scaleLuminance = false;
 				self.updateColors();
 			});
 
@@ -406,6 +413,7 @@ module.exports = function() {
 			
 			gui.add(self.settings.UI, 'LuminanceScale', 0.0, 100.0).onChange(function(event) {
 				
+				self.settings.UI.scaleLuminance = true;
 				self.settings.UI.LuminanceScale = parseFloat(event);
 				self.updateColors();
 			});
