@@ -280,7 +280,7 @@ module.exports = function() {
 		setPosByHSL: function(mesh, color)
 		{
 			let hsl = color.getHSL(color);
-			let r = HSLConeRadius * (1 - 2*Math.abs(hsl.l - 0.5));
+			let r = HSLConeRadius * (1 - 2*Math.abs(hsl.l - 0.5)) * hsl.s;
 			let x = r * Math.sin(-hsl.h * Math.PI * 2);
 			let z = r * Math.cos(hsl.h * Math.PI * 2);
 			let y = hsl.l * HSLConeHeight * 2 - 0.5 * HSLConeHeight;
