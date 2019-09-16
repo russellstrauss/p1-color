@@ -161,6 +161,9 @@ module.exports = function () {
         outputColor = complementaryColor;
       } else if (this.settings.UI.ColorOutputMode === 'Accent') {
         outputColor = this.getAccentColor(colorInput1, colorInput2);
+      } else if (this.settings.UI.ColorOutputMode === 'Triad') {
+        // BUG, TODO: Throws error when selecting Triad mode before selecting color
+        outputColor = this.getTriadColor(colorInput1, colorInput2);
       }
 
       return outputColor;
@@ -245,6 +248,12 @@ module.exports = function () {
       console.log(h, s, l);
       return output;
     },
+    getTriadColor: function getTriadColor(color1, color2) {
+      var hsl1 = color1.getHSL(color1);
+      var hsl2 = color2.getHSL(color2);
+      console.log('hsl1: ', hsl1);
+      console.log('hsl2: ', hsl2); // get hue angle between two colors. Then translate by same angle in either positive or negative direction to get equally undistiguishable color
+    },
     setPosByRGB: function setPosByRGB(mesh, color) {
       mesh.position.setX((color.r - 0.5) * RGBCubeSize);
       mesh.position.setY((color.g - 0.5) * RGBCubeSize);
@@ -252,7 +261,7 @@ module.exports = function () {
     },
     setPosByHSL: function setPosByHSL(mesh, color) {
       var hsl = color.getHSL(color);
-      var r = HSLConeRadius * (1 - 2 * Math.abs(hsl.l - 0.5));
+      var r = HSLConeRadius * (1 - 2 * Math.abs(hsl.l - 0.5)) * hsl.s;
       var x = r * Math.sin(-hsl.h * Math.PI * 2);
       var z = r * Math.cos(hsl.h * Math.PI * 2);
       var y = hsl.l * HSLConeHeight * 2 - 0.5 * HSLConeHeight;
@@ -341,9 +350,7 @@ module.exports = function () {
     },
     addInputUI: function addInputUI() {
       var self = this;
-      var gui = new dat.GUI({
-        width: 300
-      });
+      var gui = new dat.GUI();
       gui.domElement.parentElement.classList.add('color-1-picker');
       gui.addColor(self.settings.UI, 'ColorInput1').onChange(function (event) {
         self.setGUIValue(gui, 'LuminanceScale', 50);
@@ -403,12 +410,13 @@ module.exports = function () {
         this.hideMesh(backgroundSwatch1);
         this.hideMesh(backgroundSwatch2);
         HSLCone.children = HSLCone.children.filter(function (child) {
+          // get rid of translucent material used for BG on HSLCone
           if (child.material !== translucentMaterial) return true;
         });
       }
 
       if (this.settings.UI.ColorSpace === 'HSL') {
-        // If switching to background mode while in HSL, don't show
+        // If switching to background mode while in HSL, don't show the cube BG's
         this.hideMesh(backgroundBase);
         this.hideMesh(backgroundSwatch1);
         this.hideMesh(backgroundSwatch2);
@@ -524,7 +532,7 @@ module.exports = function () {
       controls.zoomSpeed = 6;
       controls.enablePan = !utils.mobile();
       controls.minDistance = 18;
-      controls.maxDistance = 100;
+      controls.maxDistance = 200;
       controls.maxPolarAngle = Math.PI / 2;
     },
     enableStats: function enableStats() {

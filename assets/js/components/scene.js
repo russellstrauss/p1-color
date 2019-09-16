@@ -169,6 +169,9 @@ module.exports = function() {
 			else if (this.settings.UI.ColorOutputMode === 'Accent') {
 				outputColor = this.getAccentColor(colorInput1, colorInput2);
 			}
+			else if (this.settings.UI.ColorOutputMode === 'Triad') { // BUG, TODO: Throws error when selecting Triad mode before selecting color
+				outputColor = this.getTriadColor(colorInput1, colorInput2);
+			}
 			
 			return outputColor;
 		},
@@ -268,6 +271,18 @@ module.exports = function() {
 			output.setHSL(h, s, l);
 			console.log(h,s,l);
 			return output;
+		},
+		
+		getTriadColor: function(color1, color2) {
+			
+			let hsl1 = color1.getHSL(color1);
+			let hsl2 = color2.getHSL(color2);
+			
+			console.log('hsl1: ', hsl1);
+			console.log('hsl2: ', hsl2);
+			
+			// get hue angle between two colors. Then translate by same angle in either positive or negative direction to get equally undistiguishable color
+			
 		},
 
 		setPosByRGB: function(mesh, color)
@@ -391,7 +406,7 @@ module.exports = function() {
 			
 			let self = this;
 			
-			let gui = new dat.GUI({ width: 300 });
+			let gui = new dat.GUI();
 			gui.domElement.parentElement.classList.add('color-1-picker');
 
 			gui.addColor(self.settings.UI, 'ColorInput1').onChange(function(event) {
@@ -466,12 +481,12 @@ module.exports = function() {
 				this.hideMesh(backgroundSwatch1);
 				this.hideMesh(backgroundSwatch2);
 				
-				HSLCone.children = HSLCone.children.filter(function(child) {
+				HSLCone.children = HSLCone.children.filter(function(child) { // get rid of translucent material used for BG on HSLCone
 					if (child.material !== translucentMaterial) return true;
 				});
 			}
 			
-			if (this.settings.UI.ColorSpace === 'HSL') { // If switching to background mode while in HSL, don't show
+			if (this.settings.UI.ColorSpace === 'HSL') { // If switching to background mode while in HSL, don't show the cube BG's
 				this.hideMesh(backgroundBase);
 				this.hideMesh(backgroundSwatch1);
 				this.hideMesh(backgroundSwatch2);
@@ -608,7 +623,7 @@ module.exports = function() {
 			controls.zoomSpeed = 6;
 			controls.enablePan = !utils.mobile();
 			controls.minDistance = 18;
-			controls.maxDistance = 100;
+			controls.maxDistance = 200;
 			controls.maxPolarAngle = Math.PI / 2;
 		},
 
