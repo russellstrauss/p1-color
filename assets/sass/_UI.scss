@@ -5,9 +5,10 @@
 		
 		@include mobile-only {
 			width: 100%;
-			height: 100vh;
 			display: flex;
-			align-items: flex-start;
+			align-items: flex-end;
+			top: auto;
+			bottom: 0;
 			
 			.main {
 				width: 100% !important;
@@ -16,6 +17,8 @@
 				
 				.close-button {
 					width: 100% !important;
+					position: static;
+					padding: 15px 0;
 				}
 			}
 		}
@@ -66,56 +69,72 @@
 	transform: translateX(-50%);
 }
 
-#legend {
-	width: 150px;
-	font-size: 12px;
-	position: absolute;
+.legend-container {
+	display: flex;
+	position: fixed;
 	bottom: 20px;
 	left: 20px;
-	color: black;
 	
-	@include mobile-only {
-		display: none;
-	}
-	
-	.legend-title {
-		font-size: 18px;
-	}
-	
-	.backdrop {
-		border: 1px solid black;
-		background-color: rgba(255, 255, 255, .4);
-		padding: 5px;
-		margin-top: 5px;
-	}
-	
-	table {
-		width: 100%;
+	.switch-ui {
+		align-self: flex-end;
+		margin-left: 5px;
 		
-		thead {
-			
-			tr {
-				font-weight: bold;
-				
-				&.divider {
-					vertical-align: top;
-				}
-			}
+		.label {
+			display: block;
+			margin-left: 5px;
+			font-size: 12px;
+		}
+	}
+	
+	#legend {
+		display: block;
+		width: 150px;
+		font-size: 12px;
+		color: black;
+		
+		@include mobile-only {
+			display: none;
 		}
 		
-		tr {
+		.legend-title {
+			font-size: 18px;
+		}
+		
+		.backdrop {
+			border: 1px solid black;
+			background-color: rgba(255, 255, 255, .4);
+			padding: 5px;
+			margin-top: 5px;
+		}
+		
+		table {
+			width: 100%;
 			
-			&.divider {
-				height: 20px;
-				vertical-align: bottom;
+			thead {
+				
+				tr {
+					font-weight: bold;
+					
+					&.divider {
+						vertical-align: top;
+					}
+				}
 			}
 			
-			td {
-				width: 50%;
+			tr {
 				
+				&.divider {
+					height: 20px;
+					vertical-align: bottom;
+				}
 				
-				&:last-of-type {
-					text-align: right;
+				td {
+					width: 50%;
+					
+					
+					&:last-of-type {
+						text-align: right;
+					}
 				}
 			}
 		}
@@ -152,21 +171,21 @@
 /* The switch - the box around the slider */
 .switch {
 	position: relative;
-	display: inline-block;
+	display: block;
 	width: 60px;
 	height: 34px;
 	margin: 5px;
-  }
-  
-  /* Hide default HTML checkbox */
-  .switch input {
+}
+
+/* Hide default HTML checkbox */
+.switch input {
 	opacity: 0;
 	width: 0;
 	height: 0;
-  }
-  
-  /* The slider */
-  .switch-slider {
+}
+
+/* The slider */
+.switch-slider {
 	position: absolute;
 	cursor: pointer;
 	top: 0;
@@ -176,9 +195,9 @@
 	background-color: #ccc;
 	-webkit-transition: .4s;
 	transition: .4s;
-  }
-  
-  .switch-slider:before {
+}
+
+.switch-slider:before {
 	position: absolute;
 	content: "";
 	height: 26px;
@@ -188,27 +207,27 @@
 	background-color: white;
 	-webkit-transition: .4s;
 	transition: .4s;
-  }
-  
-  input:checked + .switch-slider {
+}
+
+input:checked + .switch-slider {
 	background-color: #2196F3;
-  }
-  
-  input:focus + .switch-slider {
+}
+
+input:focus + .switch-slider {
 	box-shadow: 0 0 1px #2196F3;
-  }
-  
-  input:checked + .switch-slider:before {
+}
+
+input:checked + .switch-slider:before {
 	-webkit-transform: translateX(26px);
 	-ms-transform: translateX(26px);
-	transform: translateX(26px);
-  }
-  
-  /* Rounded sliders */
-  .switch-slider.round {
+transform: translateX(26px);
+}
+
+/* Rounded sliders */
+.switch-slider.round {
 	border-radius: 34px;
-  }
-  
-  .switch-slider.round:before {
+}
+
+.switch-slider.round:before {
 	border-radius: 50%;
-  }
+}

@@ -165,6 +165,7 @@ module.exports = function () {
       var outputColor = new THREE.Color();
       var blendedColor = this.getBlendedColor(colorInput1, colorInput2);
       var complementaryColor = this.getComplementaryColor(blendedColor);
+      var triadColor = this.getTriadColor(colorInput1, colorInput2);
 
       if (this.settings.UI.ColorOutputMode === 'Blend') {
         outputColor = blendedColor;
@@ -173,19 +174,22 @@ module.exports = function () {
       } else if (this.settings.UI.ColorOutputMode === 'Accent') {
         outputColor = this.getAccentColor(colorInput1, colorInput2);
       } else if (this.settings.UI.ColorOutputMode === 'Triad') {
-        // BUG, TODO: Throws error when selecting Triad mode before selecting color
         outputColor = this.getTriadColor(colorInput1, colorInput2);
       }
 
       return outputColor;
     },
     setOutputColor: function setOutputColor(color) {
-      var color3Element = document.querySelector('#color3');
-      color3Element.style.backgroundColor = '#' + color.getHexString();
-      color3.set(color);
-      color3Mesh.color.set(color3);
-      sphere3.material = color3Mesh;
-      this.setColorPositions(sphere3, color3);
+      console.log(color);
+
+      if (color) {
+        var color3Element = document.querySelector('#color3');
+        color3Element.style.backgroundColor = '#' + color.getHexString();
+        color3.set(color);
+        color3Mesh.color.set(color3);
+        sphere3.material = color3Mesh;
+        this.setColorPositions(sphere3, color3);
+      }
     },
     setColorPositions: function setColorPositions(colorMesh, color) {
       if (visualizeMode == RGB_MODE) {
@@ -198,6 +202,14 @@ module.exports = function () {
       message = message || '';
       var hex = color.getHexString();
       console.log('%c' + message + '                                                                                                                                 ', 'background: #' + hex + ';');
+    },
+    repeat: function repeat(x, a) {
+      return x - Math.floor(x / a) * a;
+    },
+    deltaAngle: function deltaAngle(x, y, range) {
+      var num = this.repeat(y - x, range);
+      if (num > range * 0.5) num -= range;
+      return num;
     },
     getBlendedColor: function getBlendedColor(color1, color2) {
       var lab1 = this.RGB2Lab(color1);
@@ -233,23 +245,12 @@ module.exports = function () {
         }
       } else {
         l = ave_l;
-      } // 2. hue
-
-
-      var repeat = function repeat(x, a) {
-        return x - Math.floor(x / a) * a;
-      };
-
-      var deltaAngle = function deltaAngle(x, y, range) {
-        var num = repeat(y - x, range);
-        if (num > range * 0.5) num -= range;
-        return num;
-      };
+      }
 
       var ave_h = (hsl1.h + hsl2.h) * 0.5;
       h = ave_h;
-      if (Math.abs(deltaAngle(ave_h, hsl1.h, 1.0)) < 0.25) h = ave_h + 0.5;
-      h = repeat(h, 1.0); // 3. saturation
+      if (Math.abs(this.deltaAngle(ave_h, hsl1.h, 1.0)) < 0.25) h = ave_h + 0.5;
+      h = this.repeat(h, 1.0); // 3. saturation
 
       var ave_s = (hsl1.s + hsl2.s) * 0.5;
       s = ave_s;
@@ -262,8 +263,12 @@ module.exports = function () {
     getTriadColor: function getTriadColor(color1, color2) {
       var hsl1 = color1.getHSL(color1);
       var hsl2 = color2.getHSL(color2);
-      console.log('hsl1: ', hsl1);
-      console.log('hsl2: ', hsl2); // get hue angle between two colors. Then translate by same angle in either positive or negative direction to get equally undistiguishable color
+      var angle = this.deltaAngle(hsl1.h, hsl2.h, 1.0);
+      var triad = new THREE.Color(color1);
+      triad.offsetHSL(hsl2.h + angle, 0, 0); // Hue shift by the difference in angle on color wheel between 2 color inputs
+      //triad.setHSL(triad.h, (hsl1.s + hsl2.s)/2, (hsl1.l + hsl2.l)/2);
+
+      return triad;
     },
     setPosByRGB: function setPosByRGB(mesh, color) {
       mesh.position.setX((color.r - 0.5) * RGBCubeSize);
@@ -364,15 +369,23 @@ module.exports = function () {
       var self = this;
       var gui = new dat.GUI();
       gui.domElement.parentElement.classList.add('color-1-picker');
+
+      var setReadonly = function setReadonly(input) {
+        // set input field to read only so clicking a colorpicker does not open keyboard
+        input.setAttribute('readonly', 'true');
+      };
+
       gui.addColor(self.settings.UI, 'ColorInput1').onChange(function (event) {
         self.setGUIValue(gui, 'LuminanceScale', 50);
         self.settings.UI.scaleLuminance = false;
-        self.updateColors();
+        self.updateColors(); // let input = this.domElement.querySelector('input');
+        // setReadonly(input);
       });
       gui.addColor(self.settings.UI, 'ColorInput2').onChange(function (event) {
         self.setGUIValue(gui, 'LuminanceScale', 50);
         self.settings.UI.scaleLuminance = false;
-        self.updateColors();
+        self.updateColors(); // let input = this.domElement.querySelector('input');
+        // setReadonly(input);
       });
       gui.add(self.settings.UI, 'LuminanceScale', 0.0, 100.0).onChange(function (event) {
         self.settings.UI.scaleLuminance = true;
@@ -389,7 +402,7 @@ module.exports = function () {
       });
     },
     updateModeEvents: function updateModeEvents() {
-      if (this.settings.UI.ColorOutputMode === 'Blend' || this.settings.UI.ColorOutputMode === 'Accent') {
+      if (this.settings.UI.ColorOutputMode === 'Blend' || this.settings.UI.ColorOutputMode === 'Accent' || this.settings.UI.ColorOutputMode === 'Triad') {
         this.showMesh(sphere3);
       } else {
         this.hideMesh(sphere3);

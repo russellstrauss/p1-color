@@ -17,44 +17,48 @@
 		<div id="color2">2</div>
 	</div>
 	<div id="message"></div>
-	<div id="legend">
-		<span class="legend-title">Controls</span>
-		<div class="backdrop">
-			<table>
-				<thead>
-					<tr class="divider">
-						<td>Function</td>
-						<td>Key</td>
-					</tr>
-				</thead>
-				<tbody>
-					<tr>
-						<td>Rotate</td>
-						<td>left click</td>
-					</tr>
-					<tr>
-						<td>Pan</td>
-						<td>right click</td>
-					</tr>
-					<tr>
-						<td>Zoom</td>
-						<td>scroll</td>
-					</tr>
-					<tr class="divider">
-						<td>Reset</td>
-						<td>Esc</td>
-					</tr>
-				</tbody>
-			</table>
+	<div class="legend-container">
+		
+		<div id="legend">
+			
+			<span class="legend-title">Controls</span>
+			<div class="backdrop">
+				<table>
+					<thead>
+						<tr class="divider">
+							<td>Function</td>
+							<td>Key</td>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td>Rotate</td>
+							<td>left click</td>
+						</tr>
+						<tr>
+							<td>Pan</td>
+							<td>right click</td>
+						</tr>
+						<tr>
+							<td>Zoom</td>
+							<td>scroll</td>
+						</tr>
+						<tr class="divider">
+							<td>Reset</td>
+							<td>Esc</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
 		</div>
-		<!-- Rounded switch -->
-		<div>
-		Bright Change Preview
-		<label class="switch">
-			<input id="preview-brightness" type="checkbox">
-			<span class="switch-slider round"></span>
-		</label>
-	</div>
+		<div class="switch-ui">
+			<!-- Rounded switch -->
+			<span class="label">Brightness Change Preview</span>
+			<label class="switch">
+				<input id="preview-brightness" type="checkbox">
+				<span class="switch-slider round"></span>
+			</label>
+		</div>
 	</div>
 	
 	<div id="author">
