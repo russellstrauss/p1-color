@@ -1,3 +1,5 @@
+const { Vector3 } = require("three");
+
 module.exports = function() {
 	
 	var renderer, scene, camera, controls;
@@ -12,7 +14,7 @@ module.exports = function() {
 		side: THREE.DoubleSide
 	});
 	var backgroundColor = new THREE.Color('#F0F0F0');
-	
+	var white = new THREE.Color('#FFFFFF');
 	var distinctColors = [new THREE.Color('#FFFFFF'), 
 						new THREE.Color('#FFFF00'), 
 						new THREE.Color('#FF00FF'), 
@@ -25,10 +27,7 @@ module.exports = function() {
 	var RGB_MODE = 0;
 	var HSL_MODE = 1;
 	var visualizeMode = RGB_MODE;
-	var isBrightnessChangeMode = false;
-	var exposure = 0.0;
-	var increaseExposure = true;
-	var sphere1, sphere2, sphere3;
+	var dot1, dot2, dot3;
 	var color1 = new THREE.Color();
 	var color2 = new THREE.Color();
 	var color3 = new THREE.Color();
@@ -111,16 +110,6 @@ module.exports = function() {
 				renderer.render(scene, camera);
 				controls.update();
 				stats.update();
-
-				if (self.isBrightnessChangeMode)
-				{
-					self.setExposure(exposure);
-					let delta = increaseExposure ? 0.5 : -0.5;
-					if(exposure > 50) increaseExposure = false;
-					if(exposure < -50) increaseExposure = true;
-					exposure += delta;
-					console.log(color1);
-				}
 			};
 			
 			animate();
@@ -144,8 +133,10 @@ module.exports = function() {
 			color1.set(result);
 			color1Mesh.color.set(color1);
 			
-			sphere1.material = color1Mesh;
-			this.setColorPositions(sphere1, color1);
+			if (dot1) {
+				this.setColorPositions(dot1, color1);
+				dot1.material.color = color1;
+			}
 			
 			let outputColor = this.getOutputColor(color1, color2);
 			this.setOutputColor(outputColor);
@@ -160,8 +151,10 @@ module.exports = function() {
 			color2.set(result);
 			color2Mesh.color.set(color2);
 			
-			sphere2.material = color2Mesh;
-			this.setColorPositions(sphere2, color2);
+			if (dot2) {
+				this.setColorPositions(dot2, color2);
+				dot2.material.color = color2;
+			}
 
 			let outputColor = this.getOutputColor(color1, color2);
 			this.setOutputColor(outputColor);
@@ -190,16 +183,18 @@ module.exports = function() {
 		},
 		
 		setOutputColor: function(color) {
-			console.log(color);
+			
 			if (color) {
 				
 				let color3Element = document.querySelector('#color3');
 				color3Element.style.backgroundColor = '#' + color.getHexString();
 				color3.set(color);
 				color3Mesh.color.set(color3);
-				sphere3.material = color3Mesh;
 				
-				this.setColorPositions(sphere3, color3);
+				if (dot3) {
+					this.setColorPositions(dot3, color3);
+					dot3.material.color = color3;
+				}
 			}
 		},
 		
@@ -301,8 +296,7 @@ module.exports = function() {
 			return triad;
 		},
 
-		setPosByRGB: function(mesh, color)
-		{
+		setPosByRGB: function(mesh, color) {
 			mesh.position.setX((color.r-0.5)*RGBCubeSize);
 			mesh.position.setY((color.g-0.5)*RGBCubeSize);
 			mesh.position.setZ((color.b-0.5)*RGBCubeSize);
@@ -321,41 +315,6 @@ module.exports = function() {
 			mesh.position.setZ(z);
 		},
 
-		setExposure: function(ex) {
-			let change = ex / 100.0; // just a small change
-			
-			let scale = Math.pow(2.0, change);
-			let c1 = sphere1.material.color;
-			c1.r = Math.min(color1.r * scale, 1.0);
-			c1.g = Math.min(color1.g * scale, 1.0);
-			c1.b = Math.min(color1.b * scale, 1.0);
-			
-			let c2 = sphere2.material.color;
-			c2.r = Math.min(color2.r * scale, 1.0);
-			c2.g = Math.min(color2.g * scale, 1.0);
-			c2.b = Math.min(color2.b * scale, 1.0);
-			
-			let c3 = sphere3.material.color;
-			c3.r = Math.min(color3.r * scale, 1.0);
-			c3.g = Math.min(color3.g * scale, 1.0);
-			c3.b = Math.min(color3.b * scale, 1.0);
-			
-			if (visualizeMode == RGB_MODE)
-			{
-				this.setPosByRGB(sphere1, c1);
-				this.setPosByRGB(sphere2, c2);
-				this.setPosByRGB(sphere3, c3);
-			}
-			else
-			{
-				this.setPosByHSL(sphere1, c1);
-				this.setPosByHSL(sphere2, c2);
-				this.setPosByHSL(sphere3, c3);
-			}
-
-			scene.background.setHSL(0, 0, 0.938*scale);
-		},
-
 		setColorSpace: function(mode) {
 			visualizeMode = mode
 			HSLCone.traverse ( function (child) {
@@ -371,21 +330,20 @@ module.exports = function() {
 
 			if (mode == HSL_MODE)
 			{
-				this.setPosByHSL(sphere1, color1);
-				this.setPosByHSL(sphere2, color2);
-				this.setPosByHSL(sphere3, color3);
+				this.setPosByHSL(dot1, color1);
+				this.setPosByHSL(dot2, color2);
+				this.setPosByHSL(dot3, color3);
 			}
-			else
-			{
-				this.setPosByRGB(sphere1, color1);
-				this.setPosByRGB(sphere2, color2);
-				this.setPosByRGB(sphere3, color3);
+			else {
+				this.setPosByRGB(dot1, color1);
+				this.setPosByRGB(dot2, color2);
+				this.setPosByRGB(dot3, color3);
 			}
 		},
 		
 		hideMesh: function(object) {
 			
-			object.traverse(function(child) {
+			if (object) object.traverse(function(child) {
 				if (child instanceof THREE.Mesh) {
 					child.visible = false;
 				}
@@ -394,7 +352,7 @@ module.exports = function() {
 		
 		showMesh: function(object) {
 			
-			object.traverse(function(child) {
+			if (object) object.traverse(function(child) {
 				if (child instanceof THREE.Mesh) {
 					child.visible = true;
 				}
@@ -405,9 +363,9 @@ module.exports = function() {
 			
 			this.setColor1(this.settings.UI.ColorInput1);
 			this.setColor2(this.settings.UI.ColorInput2);
-			this.setColorPositions(sphere1, color1);
-			this.setColorPositions(sphere2, color2);
-			this.setColorPositions(sphere3, color3);
+			this.setColorPositions(dot1, color1);
+			this.setColorPositions(dot2, color2);
+			this.setColorPositions(dot3, color3);
 		},
 		
 		setGUIValue: function(gui, input, value) {
@@ -435,9 +393,6 @@ module.exports = function() {
 				self.setGUIValue(gui, 'LuminanceScale', 50);
 				self.settings.UI.scaleLuminance = false;
 				self.updateColors();
-				
-				// let input = this.domElement.querySelector('input');
-				// setReadonly(input);
 			});
 			
 			gui.addColor(self.settings.UI, 'ColorInput2').onChange(function(event) {
@@ -445,9 +400,6 @@ module.exports = function() {
 				self.setGUIValue(gui, 'LuminanceScale', 50);
 				self.settings.UI.scaleLuminance = false;
 				self.updateColors();
-				
-				// let input = this.domElement.querySelector('input');
-				// setReadonly(input);
 			});
 			
 			gui.add(self.settings.UI, 'LuminanceScale', 0.0, 100.0).onChange(function(event) {
@@ -472,10 +424,10 @@ module.exports = function() {
 		updateModeEvents: function() {
 			
 			if (this.settings.UI.ColorOutputMode === 'Blend' || this.settings.UI.ColorOutputMode === 'Accent' || this.settings.UI.ColorOutputMode === 'Triad') {
-				this.showMesh(sphere3);
+				this.showMesh(dot3);
 			}
 			else {
-				this.hideMesh(sphere3);
+				this.hideMesh(dot3);
 			}
 			if (this.settings.UI.ColorOutputMode === 'Background') {
 				backgroundSwatch1.material.color = color1Mesh.color;
@@ -549,7 +501,7 @@ module.exports = function() {
 			geometry.translate(0, zBufferOffset, 0);
 			let cube = new THREE.Mesh(geometry, wireframeMaterial);
 			RGBCube.add(cube);
-			self.showPoints(geometry, distinctColors, 1.0, RGBCube);
+			self.showPoints(geometry, distinctColors, 1.0, 10, RGBCube);
 			
 			self.labelRGBCubeVertices(geometry);
 
@@ -568,30 +520,20 @@ module.exports = function() {
 							new THREE.Color("hsl(120, 100%, 50%)"),
 							new THREE.Color("hsl(60, 100%, 50%)"),
 							new THREE.Color("hsl(0, 0%, 50%)")];
-			self.showPoints(geometry, HSLColors, 1.0, HSLCone);
+			self.showPoints(geometry, HSLColors, 1.0, 10, HSLCone);
 
 			geometry = new THREE.ConeGeometry(HSLConeRadius, HSLConeHeight, 6);
 			geometry.rotateX(Math.PI);
 			geometry.translate(0, HSLConeHeight/2, 0);
 			cone = new THREE.Mesh(geometry, wireframeMaterial);
 			HSLCone.add(cone);
-			self.showPoint(geometry.vertices[0], new THREE.Color("hsl(0, 0%, 0%)"), 1.0, HSLCone);
+			self.showPoint(geometry.vertices[0], new THREE.Color("hsl(0, 0%, 0%)"), 1.0, 10, HSLCone);
 			self.labelPoint({x: geometry.vertices[0].x + 3, y: geometry.vertices[0].y, z: geometry.vertices[0].z}, 'Luminance 0%', new THREE.Color('black'), HSLCone);
 			
-			let radius = 2;
-			geometry = new THREE.SphereGeometry(radius, 64, 64);
-			geometry.translate(0, RGBCubeSize/2, 0);
-			let m1 = shadeMaterial.clone();
-			sphere1 = new THREE.Mesh(geometry, m1);
-			scene.add(sphere1);
-
-			let m2 = shadeMaterial.clone()
-			sphere2 = new THREE.Mesh(geometry, m2);
-			scene.add(sphere2);
-
-			let m3 = shadeMaterial.clone()
-			sphere3 = new THREE.Mesh(geometry, m3);
-			scene.add(sphere3);
+			let position = new THREE.Vector3(0, RGBCubeSize/2, 0);
+			dot1 = self.showPoint(position, white, 1.0, 40);
+			dot2 = self.showPoint(position, white, 1.0, 40);
+			dot3 = self.showPoint(position, white, 1.0, 40);
 			
 			// hide one of color space reference frames
 			this.setColorSpace(visualizeMode);
@@ -685,27 +627,27 @@ module.exports = function() {
 			}
 		},
 		
-		showPoints: function(geometry, color, opacity, parent=scene) {
+		showPoints: function(geometry, color, opacity, size, parent=scene) {
 			
 			let self = this;
 			
 			for (let i = 0; i < geometry.vertices.length; i++) {
 				if (Array.isArray(color)) {
-					self.showPoint(geometry.vertices[i], color[i], opacity, parent);
+					self.showPoint(geometry.vertices[i], color[i], opacity, size, parent);
 				}
 				else {
-					self.showPoint(geometry.vertices[i], color, opacity, parent);
+					self.showPoint(geometry.vertices[i], color, opacity, size, parent);
 				}
 			}
 		},
 		
-		showPoint: function(pt, color, opacity, parent=scene) {
+		showPoint: function(pt, color, opacity, size, parent=scene) {
 			color = color || 0xff0000;
 			opacity = opacity || 1;
 			let dotGeometry = new THREE.Geometry();
 			dotGeometry.vertices.push(new THREE.Vector3(pt.x, pt.y, pt.z));
 			let dotMaterial = new THREE.PointsMaterial({ 
-				size: 10,
+				size: size,
 				sizeAttenuation: false,
 				color: color,
 				opacity: opacity,
@@ -713,6 +655,7 @@ module.exports = function() {
 			});
 			let dot = new THREE.Points(dotGeometry, dotMaterial);
 			parent.add(dot);
+			return dot;
 		},
 		
 		showVector: function(vector, origin, color, parent=scene) {
@@ -854,26 +797,6 @@ module.exports = function() {
 					}, self.settings.messageDuration);
 				}
 			});
-
-			document.getElementById('preview-brightness').addEventListener('click', 
-				function(e) {
-					self.isBrightnessChangeMode = !self.isBrightnessChangeMode;
-					if (self.isBrightnessChangeMode)
-					{
-					}
-					else 
-					{
-						sphere1.material.color.set(color1);
-						sphere2.material.color.set(color2);
-						sphere3.material.color.set(color3);
-						self.setColorPositions(sphere1, color1);
-						self.setColorPositions(sphere2, color2);
-						self.setColorPositions(sphere3, color3);
-						exposure = 0.0;
-						increaseExposure = true;
-						self.setExposure(exposure);
-					}
-				});
 		},
 		
 		resetScene: function() {
