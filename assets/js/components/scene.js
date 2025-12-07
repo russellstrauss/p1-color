@@ -1,10 +1,13 @@
-const { Vector3 } = require("three");
+const THREE = require('three');
+const { OrbitControls } = require('three/examples/jsm/controls/OrbitControls.js');
+const { FontLoader } = require('three/examples/jsm/loaders/FontLoader.js');
+const { TextGeometry } = require('three/examples/jsm/geometries/TextGeometry.js');
 
 module.exports = function() {
 	
 	var renderer, scene, camera, controls;
 	var grid = new THREE.GridHelper(1000, 100);
-	var stats = new Stats();
+	var stats = null;
 	var wireframeMaterial = new THREE.MeshBasicMaterial({ wireframe: true, color: 0x08CDFA });
 	var translucentMaterial = new THREE.MeshBasicMaterial({transparent: true, opacity: .3, color: 0x08CDFA });
 	var backgroundBase = new THREE.Mesh();
@@ -41,6 +44,20 @@ module.exports = function() {
 	var RGBCube, HSLCone;
 	var zBufferOffset = .05;
 
+	// Helper function to get vertices from BufferGeometry
+	function getVerticesFromBufferGeometry(geometry) {
+		const positionAttribute = geometry.getAttribute('position');
+		const vertices = [];
+		for (let i = 0; i < positionAttribute.count; i++) {
+			vertices.push(new THREE.Vector3(
+				positionAttribute.getX(i),
+				positionAttribute.getY(i),
+				positionAttribute.getZ(i)
+			));
+		}
+		return vertices;
+	}
+
 	return {
 		
 		settings: {
@@ -56,7 +73,7 @@ module.exports = function() {
 				fontStyle: {
 					font: null,
 					size: 1,
-					height: 0,
+					depth: 0,
 					curveSegments: 1
 				}
 			},
@@ -101,7 +118,7 @@ module.exports = function() {
 				self.addFloor();
 			}
 			
-			if (self.settings.activateStatsFPS) {
+			if (self.settings.activateStatsFPS && stats) {
 				self.enableStats();
 			}
 			
@@ -109,7 +126,7 @@ module.exports = function() {
 				requestAnimationFrame(animate);
 				renderer.render(scene, camera);
 				controls.update();
-				stats.update();
+				if (stats) stats.update();
 			};
 			
 			animate();
@@ -118,10 +135,11 @@ module.exports = function() {
 		scaleColorLuminance: function(color) {
 			
 			let colorObj = new THREE.Color(color);
-			let hsl = colorObj.getHSL(colorObj);
-			hsl = hsl.setHSL(hsl.h, hsl.s, (this.settings.UI.LuminanceScale/100));
+			let hsl = {};
+			colorObj.getHSL(hsl);
+			colorObj.setHSL(hsl.h, hsl.s, (this.settings.UI.LuminanceScale/100));
 			
-			return new THREE.Color(hsl);
+			return colorObj;
 		},
 		
 		setColor1: function(color) {
@@ -243,8 +261,10 @@ module.exports = function() {
 
 		getAccentColor: function(color1, color2) {
 			let output = new THREE.Color();
-			let hsl1 = color1.getHSL(color1);
-			let hsl2 = color2.getHSL(color2);
+			let hsl1 = {};
+			let hsl2 = {};
+			color1.getHSL(hsl1);
+			color2.getHSL(hsl2);
 
 			// 1. luminance
 			let threshold_delta_luminance = 0.2;
@@ -285,14 +305,14 @@ module.exports = function() {
 		},
 		
 		getTriadColor: function(color1, color2) {
-			
-			let hsl1 = color1.getHSL(color1);
-			let hsl2 = color2.getHSL(color2);
+			let hsl1 = {};
+			let hsl2 = {};
+			color1.getHSL(hsl1);
+			color2.getHSL(hsl2);
 			
 			let angle = this.deltaAngle(hsl1.h, hsl2.h, 1.0);
 			let triad = new THREE.Color(color1);
 			triad.offsetHSL(hsl2.h + angle, 0, 0); // Hue shift by the difference in angle on color wheel between 2 color inputs
-			//triad.setHSL(triad.h, (hsl1.s + hsl2.s)/2, (hsl1.l + hsl2.l)/2);
 			return triad;
 		},
 
@@ -304,7 +324,8 @@ module.exports = function() {
 
 		setPosByHSL: function(mesh, color)
 		{
-			let hsl = color.getHSL(color);
+			let hsl = {};
+			color.getHSL(hsl);
 			let r = HSLConeRadius * (1 - 2*Math.abs(hsl.l - 0.5)) * hsl.s;
 			let x = r * Math.sin(-hsl.h * Math.PI * 2);
 			let z = r * Math.cos(hsl.h * Math.PI * 2);
@@ -501,17 +522,23 @@ module.exports = function() {
 			geometry.translate(0, zBufferOffset, 0);
 			let cube = new THREE.Mesh(geometry, wireframeMaterial);
 			RGBCube.add(cube);
-			self.showPoints(geometry, distinctColors, 1.0, 10, RGBCube);
 			
-			self.labelRGBCubeVertices(geometry);
+			// Get vertices for BoxGeometry (8 corners)
+			let cubeVertices = self.getBoxVertices(RGBCubeSize, RGBCubeSize/2 + zBufferOffset);
+			self.showPointsFromArray(cubeVertices, distinctColors, 1.0, 10, RGBCube);
+			self.labelRGBCubeVertices(cubeVertices);
 
 			HSLCone = new THREE.Object3D();
 			scene.add(HSLCone);
 			geometry = new THREE.ConeGeometry(HSLConeRadius, HSLConeHeight, 6);
 			geometry.translate(0, 3*HSLConeHeight/2, 0);
 			let cone = new THREE.Mesh(geometry, wireframeMaterial);
-			self.labelPoint({x: geometry.vertices[0].x + 3, y: geometry.vertices[0].y, z: geometry.vertices[0].z}, 'Luminance 100%', new THREE.Color('black'), HSLCone);
+			
+			// Get cone apex position (top of translated cone)
+			let coneApexTop = { x: 3, y: 2*HSLConeHeight, z: 0 };
+			self.labelPoint(coneApexTop, 'Luminance 100%', new THREE.Color('black'), HSLCone);
 			HSLCone.add(cone);
+			
 			let HSLColors = [new THREE.Color("hsl(0, 100%, 100%)"),
 							new THREE.Color("hsl(0, 100%, 50%)"),
 							new THREE.Color("hsl(300, 100%, 50%)"),
@@ -520,15 +547,21 @@ module.exports = function() {
 							new THREE.Color("hsl(120, 100%, 50%)"),
 							new THREE.Color("hsl(60, 100%, 50%)"),
 							new THREE.Color("hsl(0, 0%, 50%)")];
-			self.showPoints(geometry, HSLColors, 1.0, 10, HSLCone);
+			
+			// Get cone vertices
+			let coneVertices = self.getConeVertices(HSLConeRadius, HSLConeHeight, 6, 3*HSLConeHeight/2);
+			self.showPointsFromArray(coneVertices, HSLColors, 1.0, 10, HSLCone);
 
 			geometry = new THREE.ConeGeometry(HSLConeRadius, HSLConeHeight, 6);
 			geometry.rotateX(Math.PI);
 			geometry.translate(0, HSLConeHeight/2, 0);
 			cone = new THREE.Mesh(geometry, wireframeMaterial);
 			HSLCone.add(cone);
-			self.showPoint(geometry.vertices[0], new THREE.Color("hsl(0, 0%, 0%)"), 1.0, 10, HSLCone);
-			self.labelPoint({x: geometry.vertices[0].x + 3, y: geometry.vertices[0].y, z: geometry.vertices[0].z}, 'Luminance 0%', new THREE.Color('black'), HSLCone);
+			
+			// Bottom cone apex
+			let bottomApex = { x: 0, y: 0, z: 0 };
+			self.showPoint(bottomApex, new THREE.Color("hsl(0, 0%, 0%)"), 1.0, 10, HSLCone);
+			self.labelPoint({x: bottomApex.x + 3, y: bottomApex.y, z: bottomApex.z}, 'Luminance 0%', new THREE.Color('black'), HSLCone);
 			
 			let position = new THREE.Vector3(0, RGBCubeSize/2, 0);
 			dot1 = self.showPoint(position, white, 1.0, 40);
@@ -539,12 +572,46 @@ module.exports = function() {
 			this.setColorSpace(visualizeMode);
 		},
 		
-		labelRGBCubeVertices: function(geometry) {
+		// Helper to get box corner vertices
+		getBoxVertices: function(size, yOffset) {
+			let half = size / 2;
+			return [
+				{ x: half, y: half + yOffset, z: half },
+				{ x: half, y: half + yOffset, z: -half },
+				{ x: half, y: -half + yOffset, z: half },
+				{ x: half, y: -half + yOffset, z: -half },
+				{ x: -half, y: half + yOffset, z: -half },
+				{ x: -half, y: half + yOffset, z: half },
+				{ x: -half, y: -half + yOffset, z: -half },
+				{ x: -half, y: -half + yOffset, z: half }
+			];
+		},
+		
+		// Helper to get cone vertices
+		getConeVertices: function(radius, height, segments, yOffset) {
+			let vertices = [];
+			// Apex
+			vertices.push({ x: 0, y: height/2 + yOffset, z: 0 });
+			// Base vertices
+			for (let i = 0; i < segments; i++) {
+				let angle = (i / segments) * Math.PI * 2;
+				vertices.push({
+					x: radius * Math.cos(angle),
+					y: -height/2 + yOffset,
+					z: radius * Math.sin(angle)
+				});
+			}
+			// Center of base (for the extra color)
+			vertices.push({ x: 0, y: -height/2 + yOffset, z: 0 });
+			return vertices;
+		},
+		
+		labelRGBCubeVertices: function(vertices) {
 			
 			// Label Cube Vertices
-			for (let i = 0; i < geometry.vertices.length; i++) {
+			for (let i = 0; i < vertices.length; i++) {
 				let label = 'RGB(' + (distinctColors[i].r * 255).toString() + ', ' + (distinctColors[i].g * 255).toString() + ', ' + (distinctColors[i].b * 255).toString() + ')';
-				let location = geometry.vertices[i].clone();
+				let location = { x: vertices[i].x, y: vertices[i].y, z: vertices[i].z };
 				
 				if (i > 3) {
 					location.x -= 13;
@@ -557,7 +624,7 @@ module.exports = function() {
 		},
 
 		enableControls: function() {
-			controls = new THREE.OrbitControls(camera, renderer.domElement);
+			controls = new OrbitControls(camera, renderer.domElement);
 			controls.target.set(0, 0, 0);
 			controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
 			controls.dampingFactor = 0.05;
@@ -569,7 +636,7 @@ module.exports = function() {
 		},
 
 		enableStats: function() {
-			document.body.appendChild(stats.dom);
+			if (stats) document.body.appendChild(stats.dom);
 		},
 
 		setUpLights: function() {
@@ -627,25 +694,30 @@ module.exports = function() {
 			}
 		},
 		
-		showPoints: function(geometry, color, opacity, size, parent=scene) {
-			
+		showPointsFromArray: function(vertices, color, opacity, size, parent) {
 			let self = this;
+			parent = parent || scene;
 			
-			for (let i = 0; i < geometry.vertices.length; i++) {
+			for (let i = 0; i < vertices.length; i++) {
 				if (Array.isArray(color)) {
-					self.showPoint(geometry.vertices[i], color[i], opacity, size, parent);
+					self.showPoint(vertices[i], color[i], opacity, size, parent);
 				}
 				else {
-					self.showPoint(geometry.vertices[i], color, opacity, size, parent);
+					self.showPoint(vertices[i], color, opacity, size, parent);
 				}
 			}
 		},
 		
-		showPoint: function(pt, color, opacity, size, parent=scene) {
+		showPoint: function(pt, color, opacity, size, parent) {
 			color = color || 0xff0000;
 			opacity = opacity || 1;
-			let dotGeometry = new THREE.Geometry();
-			dotGeometry.vertices.push(new THREE.Vector3(pt.x, pt.y, pt.z));
+			parent = parent || scene;
+			
+			// Use BufferGeometry instead of deprecated Geometry
+			let dotGeometry = new THREE.BufferGeometry();
+			let vertices = new Float32Array([pt.x, pt.y, pt.z]);
+			dotGeometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+			
 			let dotMaterial = new THREE.PointsMaterial({ 
 				size: size,
 				sizeAttenuation: false,
@@ -658,19 +730,26 @@ module.exports = function() {
 			return dot;
 		},
 		
-		showVector: function(vector, origin, color, parent=scene) {
+		showVector: function(vector, origin, color, parent) {
 			
 			color = color || 0xff0000;
+			parent = parent || scene;
 			let arrowHelper = new THREE.ArrowHelper(vector, origin, vector.length(), color);
 			parent.add(arrowHelper);
 		},
 		
-		drawLine: function(pt1, pt2, parent=scene) {
+		drawLine: function(pt1, pt2, parent) {
 			
+			parent = parent || scene;
 			let material = new THREE.LineBasicMaterial({ color: 0x0000ff });
-			let geometry = new THREE.Geometry();
-			geometry.vertices.push(new THREE.Vector3(pt1.x, pt1.y, pt1.z));
-			geometry.vertices.push(new THREE.Vector3(pt2.x, pt2.y, pt2.z));
+			
+			// Use BufferGeometry instead of deprecated Geometry
+			let geometry = new THREE.BufferGeometry();
+			let vertices = new Float32Array([
+				pt1.x, pt1.y, pt1.z,
+				pt2.x, pt2.y, pt2.z
+			]);
+			geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
 			
 			let line = new THREE.Line(geometry, material);
 			parent.add(line);
@@ -698,39 +777,45 @@ module.exports = function() {
 		},
 		
 		createTriangle: function(pt1, pt2, pt3) { // return geometry
-			let triangleGeometry = new THREE.Geometry();
-			triangleGeometry.vertices.push(new THREE.Vector3(pt1.x, pt1.y, pt1.z));
-			triangleGeometry.vertices.push(new THREE.Vector3(pt2.x, pt2.y, pt2.z));
-			triangleGeometry.vertices.push(new THREE.Vector3(pt3.x, pt3.y, pt3.z));
-			triangleGeometry.faces.push(new THREE.Face3(0, 1, 2));
-			triangleGeometry.computeFaceNormals();
+			// Use BufferGeometry instead of deprecated Geometry
+			let triangleGeometry = new THREE.BufferGeometry();
+			let vertices = new Float32Array([
+				pt1.x, pt1.y, pt1.z,
+				pt2.x, pt2.y, pt2.z,
+				pt3.x, pt3.y, pt3.z
+			]);
+			triangleGeometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+			triangleGeometry.setIndex([0, 1, 2]);
+			triangleGeometry.computeVertexNormals();
 			return triangleGeometry;
 		},
 		
-		activateAxesHelper: function(parent=scene) {
+		activateAxesHelper: function(parent) {
 			
 			let self = this;
+			parent = parent || scene;
 			let axesHelper = new THREE.AxesHelper(self.settings.axesHelper.axisLength);
 			parent.add(axesHelper);
 		},
 		
-		labelAxes: function(parent=scene) {
+		labelAxes: function(parent) {
 			
 			let self = this;
-			if (self.settings.font.enable) {
-				let textGeometry = new THREE.TextGeometry('Y', self.settings.font.fontStyle);
+			parent = parent || scene;
+			if (self.settings.font.enable && self.settings.font.fontStyle.font) {
+				let textGeometry = new TextGeometry('Y', self.settings.font.fontStyle);
 				let textMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
 				let mesh = new THREE.Mesh(textGeometry, textMaterial);
 				textGeometry.translate(0, self.settings.axesHelper.axisLength, 0);
 				parent.add(mesh);
 				
-				textGeometry = new THREE.TextGeometry('X', self.settings.font.fontStyle);
+				textGeometry = new TextGeometry('X', self.settings.font.fontStyle);
 				textMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
 				mesh = new THREE.Mesh(textGeometry, textMaterial);
 				textGeometry.translate(self.settings.axesHelper.axisLength, 0, 0);
 				parent.add(mesh);
 				
-				textGeometry = new THREE.TextGeometry('Z', self.settings.font.fontStyle);
+				textGeometry = new TextGeometry('Z', self.settings.font.fontStyle);
 				textMaterial = new THREE.MeshBasicMaterial({ color: 0x0000ff });
 				mesh = new THREE.Mesh(textGeometry, textMaterial);
 				textGeometry.translate(0, 0, self.settings.axesHelper.axisLength);
@@ -741,7 +826,7 @@ module.exports = function() {
 		loadFont: function() {
 			
 			let self = this;
-			let loader = new THREE.FontLoader();
+			let loader = new FontLoader();
 			let fontPath = '';
 			fontPath = 'assets/vendors/js/three.js/examples/fonts/helvetiker_regular.typeface.json';
 
@@ -765,12 +850,13 @@ module.exports = function() {
 		},
 		
 		/* 	Inputs: pt - point in space to label, in the form of object with x, y, and z properties; label - text content for label; color - optional */
-		labelPoint: function(pt, label, color, parent=scene) {
+		labelPoint: function(pt, label, color, parent) {
 			
 			let self = this;
-			if (self.settings.font.enable) {
+			parent = parent || scene;
+			if (self.settings.font.enable && self.settings.font.fontStyle.font) {
 				color = color || 0xff0000;
-				let textGeometry = new THREE.TextGeometry(label, self.settings.font.fontStyle);
+				let textGeometry = new TextGeometry(label, self.settings.font.fontStyle);
 				let textMaterial = new THREE.MeshBasicMaterial({ color: color });
 				let mesh = new THREE.Mesh(textGeometry, textMaterial);
 				textGeometry.translate(pt.x, pt.y, pt.z);
@@ -824,21 +910,21 @@ module.exports = function() {
 			camera.position.z = pt.z;
 		},
 		
-		getCentroid: function(geometry) {
+		getCentroid: function(vertices) {
 			
 			let result = {};
 			let x = 0, y = 0, z = 0;
 			
-			for (let i = 0; i < geometry.vertices.length; i++) {
+			for (let i = 0; i < vertices.length; i++) {
 				
-				x += geometry.vertices[i].x;
-				y += geometry.vertices[i].y;
-				z += geometry.vertices[i].z;
+				x += vertices[i].x;
+				y += vertices[i].y;
+				z += vertices[i].z;
 			}
 			
-			x = x / geometry.vertices.length;
-			y = y / geometry.vertices.length;
-			z = z / geometry.vertices.length;
+			x = x / vertices.length;
+			y = y / vertices.length;
+			z = z / vertices.length;
 			result = { x: x, y: y, z: z};
 			return result;
 		},
@@ -916,8 +1002,8 @@ module.exports = function() {
 		
 		renderTitle: function() {
 			
-			if (this.settings.font.enable) {
-				let textGeometry = new THREE.TextGeometry('Exploring 3D Color Space', this.settings.font.fontStyle);
+			if (this.settings.font.enable && this.settings.font.fontStyle.font) {
+				let textGeometry = new TextGeometry('Exploring 3D Color Space', this.settings.font.fontStyle);
 				let textMaterial = new THREE.MeshBasicMaterial({ color: new THREE.Color('black') });
 				let mesh = new THREE.Mesh(textGeometry, textMaterial);
 				textGeometry.translate(-RGBCubeSize/2.5, 0, RGBCubeSize * 2);
