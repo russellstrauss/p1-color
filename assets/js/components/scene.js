@@ -1,9 +1,11 @@
-const THREE = require('three');
-const { OrbitControls } = require('three/examples/jsm/controls/OrbitControls.js');
-const { FontLoader } = require('three/examples/jsm/loaders/FontLoader.js');
-const { TextGeometry } = require('three/examples/jsm/geometries/TextGeometry.js');
+import * as THREE from 'three';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
+import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
+import * as dat from 'dat.gui';
+import utils from '../utils.js';
 
-module.exports = function() {
+export default function() {
 	
 	var renderer, scene, camera, controls;
 	var grid = new THREE.GridHelper(1000, 100);
@@ -81,8 +83,8 @@ module.exports = function() {
 			errorLogging: false,
 			defaultCameraLocation: {
 				x: 0,
-				y: 40,
-				z: 40
+				y: 26,
+				z: 60
 			},
 			UI: {
 				ColorInput1: '#FFFFFF',

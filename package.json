@@ -1,31 +1,22 @@
 {
   "name": "colorspace",
   "version": "1.0.0",
-  "description": "Demo Development Sandbox",
+  "description": "Interactive demo of using colorspace to create color schemes using geometry.",
+  "type": "module",
   "main": "index.js",
   "scripts": {
-    "dev": "gulp",
-    "build": "gulp build",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "author": "Russell Strauss",
   "license": "Creative Commons Attribution-NonCommercial-ShareAlike 3.0",
-  "devDependencies": {
-    "@babel/core": "^7.23.9",
-    "@babel/preset-env": "^7.23.9",
-    "babelify": "^10.0.0",
-    "browser-sync": "^3.0.2",
-    "browserify": "^17.0.0",
-    "esmify": "^2.1.1",
-    "gulp": "^5.0.0",
-    "gulp-babel": "^8.0.0",
-    "gulp-concat": "^2.6.1",
-    "gulp-rename": "^2.0.0",
-    "gulp-sass": "^5.1.0",
-    "gulp-sourcemaps": "^2.6.5",
-    "node-notifier": "^10.0.1",
-    "sass": "^1.70.0",
+  "dependencies": {
     "three": "^0.181.0",
-    "vinyl-source-stream": "^2.0.0"
+    "dat.gui": "^0.7.9"
+  },
+  "devDependencies": {
+    "sass": "^1.70.0",
+    "vite": "^5.0.0"
   }
 }

@@ -1,5 +1,5 @@
-var Scene = require('./components/scene.js');
-var Utilities = require('./utils.js');
+import Scene from './components/scene.js';
+import Utilities from './utils.js';
 
 (function () {
 	
