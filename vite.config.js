@@ -1,16 +1,14 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
+  base: '',
   // config options
   build: {
     outDir: 'dist',
-    assetsDir: 'assets',
+    assetsDir: '', // Put assets in the root of dist
     rollupOptions: {
       output: {
-        manualChunks: {
-          three: ['three'],
-          vendor: ['dat.gui']
-        }
+        // Use default chunking to avoid manual chunk issues
       }
     },
     chunkSizeWarningLimit: 1000

@@ -4,6 +4,7 @@ import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
 import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
 import * as dat from 'dat.gui';
 import utils from '../utils.js';
+import fontUrl from 'three/examples/fonts/helvetiker_regular.typeface.json?url';
 
 export default function() {
 	
@@ -829,10 +830,9 @@ export default function() {
 			
 			let self = this;
 			let loader = new FontLoader();
-			let fontPath = '';
-			fontPath = 'assets/vendors/js/three.js/examples/fonts/helvetiker_regular.typeface.json';
 
-			loader.load(fontPath, function(font) { // success event
+			loader.load(fontUrl, function(font) { // success event
+
 				
 				if (self.settings.errorLogging) console.log('Fonts loaded successfully.');
 				self.settings.font.fontStyle.font = font;
